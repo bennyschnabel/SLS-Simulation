@@ -78,7 +78,7 @@ xlabel('x [m]');
 ylabel('y [m]');
 zlabel('Temprature');
 orient(fig,'landscape');
-print(fig,'-bestfit','Test','-dpdf','-r0');
+print(fig,'-bestfit','Simulation','-dpdf','-r0');
 
 %% Print
 

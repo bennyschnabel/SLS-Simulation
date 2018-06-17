@@ -103,7 +103,7 @@ function [T, x, y, t, maxT, minT] = computateHeatEquation2D(Lx, Ly, nx, ny, qw, 
          T_max = max(max(T));
          
          % Real-time plot
-         realTimePlot='yes';
+         realTimePlot='no';
          
          switch realTimePlot
              case 'yes'
