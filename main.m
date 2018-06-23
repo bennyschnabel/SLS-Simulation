@@ -4,6 +4,7 @@ clear variables; close all; clc;
 addpath('Laser model');
 addpath('Material model');
 addpath('Thermal model');
+addpath('Functions');
 addpath('STL files');
 
 %% Material model
@@ -45,7 +46,7 @@ thermalParameter = getThermalParameter();
 % Length of domain in x direction
 lengthOfDomainInX = thermalParameter.lengthOfDomainInX; % [m]
 % Length of domain in y direction
-lengthOfDomainInY = thermalParameter.lengthOfDomainInX; % [m]
+lengthOfDomainInY = thermalParameter.lengthOfDomainInY; % [m]
 % Number of nodes in x direction
 numberOfNodesInX = thermalParameter.numberOfNodesInX;
 % Number of nodes in y direction
@@ -58,7 +59,7 @@ initialCondition = zeros(numberOfNodesInX,numberOfNodesInY);
 
 for i = 1 : numberOfNodesInX
     for j = 1 : numberOfNodesInY
-        initialCondition(i,j) = roomTemperature;
+        initialCondition(i,j) = 175;%roomTemperature;
     end
 end
 

@@ -5,7 +5,7 @@ function [T, x, y, t, maxT, minT] = computateHeatEquation2D(Lx, Ly, nx, ny, qw, 
      dy = Ly / (ny - 1);
      
      % Alpha Start !!!
-     roomTemperature = 25;
+     roomTemperature = 175;
      constantTemperature = 184.3;
      alpha = thermalDiffusivity(constantTemperature) * 10^5;
      q = zeros(nx,ny);
@@ -17,7 +17,7 @@ function [T, x, y, t, maxT, minT] = computateHeatEquation2D(Lx, Ly, nx, ny, qw, 
      Dy = alpha/dy^2;
      
      % end time
-     tFinal = 2.0;
+     tFinal = 1.5;
      
      % For colorbar
      T_min = 0;
@@ -28,8 +28,8 @@ function [T, x, y, t, maxT, minT] = computateHeatEquation2D(Lx, Ly, nx, ny, qw, 
      minT = roomTemperature;
 
      % Set Initial time step
-     %dt0 = 1/(2*alpha *(1/dx^2+1/dy^2)); % stability condition
-     dt0 = 0.0001;
+     dt0 = 1/(2*alpha *(1/dx^2+1/dy^2)); % stability condition
+     %dt0 = 0.0001;
      
      % Build Numerical Mesh
      [x,y] = meshgrid(0:dx:Lx,0:dy:Ly);
@@ -43,7 +43,7 @@ function [T, x, y, t, maxT, minT] = computateHeatEquation2D(Lx, Ly, nx, ny, qw, 
          
          T = zeros(size(T0));
          
-         if t < 0.02 % Lasertime
+         if t < 0.01 % Lasertime
              titlePlot = ['Elapsed time: ' num2str(t) ' s - Heating on'];
              for j = 1:ny
                  for i = 1:nx
@@ -116,7 +116,7 @@ function [T, x, y, t, maxT, minT] = computateHeatEquation2D(Lx, Ly, nx, ny, qw, 
                      caxis([T_min T_max]);
                      cb = colorbar;
                      title(titlePlot);
-                     ylabel(cb, 'Â°C');
+                     ylabel(cb, 'Temperatur °C');
                      xlabel('x [m]');
                      ylabel('y [m]');
                      zlim([T_min T_max]);

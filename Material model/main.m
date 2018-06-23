@@ -2,12 +2,78 @@ clc;
 
 %% 
 theta = 0 : 0.1 : 250;
-cp = heatCapacity(theta);
+cp = heatCapacity(theta) * 10^-3;
 lambda = heatConductivity(theta);
-%rho = density(theta);
+theta1 = 0 : 0.001 : 184.2;
+a1 = thermalDiffusivity(theta1);
+theta2 = 184.4 : 0.001 : 250;
+a2 = thermalDiffusivity(theta2);
+
+%% heatCapacity
+fig = figure();
+plot(theta,cp,'-k','LineWidth',1.5,...
+    'MarkerFaceColor',[0 0 0]);
+grid on;
+xlabel('Temperatur GC','FontSize', 12);
+ylabel('Spezifische Wärmekapazität KG K','FontSize', 12);
+set(gca,'fontsize',12);
+xlim([0 250]);
+ylim([0 22]);
+print('heatCapacity','-dsvg');
+
+%% heatConductivity
+fig = figure();
+plot(theta,lambda,'-k','LineWidth',1.5,...
+    'MarkerFaceColor',[0 0 0]);
+grid on;
+xlabel('Temperatur GC','FontSize', 12);
+ylabel('Spezifische Wärmekapazität KG K','FontSize', 12);
+set(gca,'fontsize',12);
+xlim([0 250]);
+ylim([0 0.35]);
+print('heatConductivity','-dsvg');
+
+%% density
+fig = figure();
+xh1 = [0,184.3];
+yh1 = [700,700]; % constant
+
+xv = [184.3,184.3]; % constant
+yv = [700,1020];
+
+xh2 = [184.3, 250];
+yh2 = [1020,1020]; % constant
+plot(xh1,yh1,'-k',xv,yv,'-k',xh2,yh2,'-k','LineWidth',1.5,...
+    'MarkerFaceColor',[0 0 0]);
+grid on;
+xlabel('Temperatur GC','FontSize', 12);
+ylabel('Spezifische Wärmekapazität KG K','FontSize', 12);
+set(gca,'fontsize',12);
+xlim([0 250]);
+ylim([0 1100]);
+print('density','-dsvg');
+
+%% thermalDiffusivity
+fig = figure();
+plot(theta1,a1,'-k','LineWidth',1.5,...
+    'MarkerFaceColor',[0 0 0]);
+hold on;
+plot(184.3,thermalDiffusivity(184.3),'-k','LineWidth',1.5,...
+    'MarkerFaceColor',[0 0 0]);
+hold on;
+plot(theta2,a2,'-k','LineWidth',1.5,...
+    'MarkerFaceColor',[0 0 0]);
+hold off;
+grid on;
+xlabel('Temperatur GC','FontSize', 12);
+ylabel('Spezifische Wärmekapazität KG K','FontSize', 12);
+set(gca,'fontsize',12);
+xlim([0 250]);
+ylim([0 0.2*10^-6]);
+print('thermalDiffusivity','-dsvg');
 
 %% Plot
-
+%{
 xh1 = [0,184.3];
 yh1 = [700,700]; % constant
 
@@ -26,51 +92,4 @@ grid on;
 orient(fig,'landscape');
 print(fig,'-bestfit','Dichte','-dpdf','-r0');
 
-fig = figure('Name','Spezifische Wärmekapazität');
-plot(theta, cp, 'r', 'LineWidth', 1);
-xlabel('Temperatur [$^\circ C$]','Interpreter','latex');
-ylabel('Spezifische W\"armekapazit\"at $\left[ \frac{kJ}{kg \cdot K} \right]$','Interpreter','latex')
-grid on;
-orient(fig,'landscape');
-print(fig,'-bestfit','SpezifischeWaermekapazitaet','-dpdf','-r0');
-
-fig = figure('Name','Wärmeleitfähigkeit');
-plot(theta, lambda, 'r', 'LineWidth', 1);
-xlabel('Temperatur [$^\circ C$]','Interpreter','latex');
-ylabel('W\"armeleitf\"ahigkeit [$\frac{W}{m \cdot K}$]','Interpreter','latex');
-grid on;
-orient(fig,'landscape');
-print(fig,'-bestfit','Waermeleitfaehigkeit','-dpdf','-r0');
-
-%{
-fig = figure('Name','Materialmodell');
-p = uipanel('Parent',fig,'BorderType','none'); 
-p.Title = 'Materialmodell'; 
-p.TitlePosition = 'centertop'; 
-p.FontSize = 12;
-p.FontWeight = 'bold';
-
-ax1 = subplot(2,2,1,'Parent',p);
-plot(theta, cp, 'r', 'LineWidth', 1);
-xlabel('Temperatur [$^\circ C$]','Interpreter','latex');
-ylabel('Spezifische W\"armekapazit\"at $\left[ \frac{kJ}{kg \cdot K} \right]$','Interpreter','latex')
-grid on;
-title('Subplot 1');
-
-ax2 = subplot(2,2,2,'Parent',p);
-plot(theta, lambda, 'r', 'LineWidth', 1);
-xlabel('Temperatur [$^\circ C$]','Interpreter','latex');
-ylabel('W\"armeleitf\"ahigkeit [$\frac{W}{m \cdot K}$]','Interpreter','latex')
-grid on;
-title('Subplot 1');
-
-ax3 = subplot(2,2,3,'Parent',p);
-plot(theta, 4);
-xlabel('Temperatur [$^\circ C$]','Interpreter','latex');
-ylabel('W\"armeleitf\"ahigkeit [$\frac{W}{m K}$]','Interpreter','latex')
-grid on;
-title('Subplot 1');
-
-orient(fig,'landscape');
-print(fig,'-bestfit','Materialmodell','-dpdf', '-painters');
 %}
