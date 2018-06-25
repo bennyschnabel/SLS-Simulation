@@ -7,7 +7,7 @@ function [T] = computateHeatEquation2D(tFinal)
     %
     
     %% Parameters
-    D = 1.0; % alpha
+    D = computateThermalDiffusivity(184.3) * 10^5; % alpha
     L = 0.1; nx = 100; dx = L/(nx-1); 
     W = 0.1; ny = 100; dy = W/(ny-1);
     Dx = D/dx^2; Dy = D/dy^2;
@@ -21,7 +21,7 @@ function [T] = computateHeatEquation2D(tFinal)
     
     % Set Initial time step
     dt0 = 1/(2*D*(1/dx^2+1/dy^2)); % stability condition
-    
+    %dt0 = 2.550760126517702e-07;
     %% Solver Loop 
     % load initial conditions
     t=dt0; it=0; u=u0; dt=dt0;
@@ -37,7 +37,7 @@ function [T] = computateHeatEquation2D(tFinal)
          T = u;
          % set BCs
          u(1,:) = 100; u(nx,:) = 200;
-         u(:,1) = 100; u(:,ny) = 200;
+         u(:,1) = 100; u(:,ny) = 100;
          
          % compute time step
          if t+dt>tFinal
@@ -63,6 +63,7 @@ function [T] = computateHeatEquation2D(tFinal)
          end
          
     end
+    %{
     fig = figure(1);
     surf(x,y,u);
     view(0,90);
@@ -75,3 +76,4 @@ function [T] = computateHeatEquation2D(tFinal)
     ylabel(cb, 'Temperatur °C');
     orient(fig,'landscape');
     print(fig,'-bestfit','Test','-dpdf','-r0');
+    %}
