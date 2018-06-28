@@ -16,4 +16,6 @@ function parameter = getLaserParameter()
     parameter.rawBeamRadius = 16.0;
     % Distance to focal point [mm]
     parameter.distanceFocalPoint  = 10.0;
+    % Laser Speed [m/s]
+    parameter.laserSpeed = 0.1;
 end
