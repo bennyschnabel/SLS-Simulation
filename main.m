@@ -1,7 +1,5 @@
 clear variables; close all; clc;
 
-t_calc = cputime;
-
 %% Add folders to search path
 addpath('Laser model');
 addpath('Material model');
@@ -26,7 +24,7 @@ P = laserParameter.laserPower;
 % Laser Speed [m/s]
 v = laserParameter.laserSpeed;
 
-axisscale = 0.025;
+axisscale = 0.02;
 
 x = -axisscale : 0.001 : axisscale;
 y = -axisscale : 0.001 : axisscale;
@@ -34,6 +32,8 @@ y = -axisscale : 0.001 : axisscale;
 [X,Y] = meshgrid(x,y);
 
 r = sqrt(X.^2 + Y.^2);
+
+%P = [0: 1 : 30];
 
 % Calculation of the beam divergence angle [-]
 theta = computateBeamDivergenceAngle(lambda, r_0);
@@ -50,7 +50,7 @@ q_w = computateHeatFluxIntensityWorkpiece(r_0, r_w, q_0);
 % Calculation of the maximal heat flux intensity at the workpiece [W/m^2]
 q_w_max = max(max(q_w));
 
-%plotLaserFunctions(X,Y,q_w,axisscale,'Wärmestromdichte q_w', 'pdf');
+%plotLaserFunctions(X,Y,q_w * 10^-6,axisscale,'Wärmestromdichte q_w xy', 'pdf');
 
 %% Material model
 
@@ -63,47 +63,53 @@ q_w_max = max(max(q_w));
 
 thermalParameter = getThermalParameter();
 
-nx = thermalParameter.numberOfNodesInX;
-ny = thermalParameter.numberOfNodesInY;
-Lx = thermalParameter.lengthOfDomainInX;
-% Laser time
-t_Laser = Lx / v;
-
-% Build IC
-%u0 = sin(pi*x).*sin(pi*y);
-u0 = zeros(size(nx,ny));
-
-for i = 1 : nx
-    for j = 1 : ny
-        u0(i,j) = 273.15+155;
-    end
-end
-
-[Temp, maxT] = computateHeatEquation2D(0.1, q_w_max, u0,273.15+25);
-i = 1;
-while i < 5
-    disp(i)
-    [Temp, maxT] = computateHeatEquation2D(2.0, 0, Temp,maxT-30);
-    disp1 = ['Heating',num2str(maxT-273.15),'°C'];
-    disp(disp1)
-    [Temp, maxT] = computateHeatEquation2D(t_Laser, q_w_max, Temp,maxT-30);
-    disp2 = ['Cooling',num2str(maxT-273.15),'°C'];
-    disp(disp2)
-    circshift(Temp,2,2);
-    i = i + 1;
-end
-
-thermalParameter = getThermalParameter();
-
-a = computateThermalDiffusivity(184.3) * 10^3;
 Lx = thermalParameter.lengthOfDomainInX;
 Ly = thermalParameter.lengthOfDomainInY;
 nx = thermalParameter.numberOfNodesInX;
 ny = thermalParameter.numberOfNodesInY;
 dx = Lx/(nx-1);
 dy = Ly/(ny-1);
-Dx = a/dx^2;
-Dy = a/dy^2;
+T_powderbed = thermalParameter.powderbedTemperature;
+T_chamber = thermalParameter.chamberTemperature;
+
+% Laser time
+t_Laser = Lx / v;
+
+% Build IC
+
+u0 = zeros(size(nx,ny));
+
+for i = 1 : nx
+    for j = 1 : ny
+        u0(i,j) = T_powderbed;
+    end
+end
+
+% Initial heating
+
+[Temp, maxT,j] = computateHeatEquation2D(t_Laser, q_w_max, u0, T_chamber,T_powderbed);
+a = Temp(ny-10:ny,nx/2-20:nx/2+20);
+disp(j);
+dispTest = ['Heating: ',num2str(maxT-273.15),'°C'];
+disp(dispTest)
+i = 1;
+%{
+while i < 5
+    disp(i)
+    [Temp, maxT] = computateHeatEquation2D(5.0, 0, Temp, T_chamber,T_powderbed);
+    disp1 = ['Cooling: ',num2str(maxT-273.15),'°C'];
+    disp(disp1)
+    [Temp, maxT] = computateHeatEquation2D(t_Laser, q_w_max, Temp, T_chamber,T_powderbed);
+    a = [a; Temp(ny-10:ny,nx/2-20:nx/2+20)];
+    disp2 = ['Heating: ',num2str(maxT-273.15),'°C'];
+    disp(disp2)
+    circshift(Temp,2,2);
+    i = i + 1;
+end
+
+a = a - 273.15;
+%}
+%% Plot
 
 [x,y] = meshgrid(0:dx:Lx,0:dy:Ly);
 
@@ -117,8 +123,6 @@ ylabel('y [m]');
 zlabel('Temperatur °C');
 cb = colorbar;
 ylabel(cb, 'Temperatur °C');
-
+orient(fig,'landscape');
+print(fig,'-bestfit','Test','-dpdf','-r0');
 disp(maxT-273.15);
-
-e = cputime-t_calc;
-disp(e)

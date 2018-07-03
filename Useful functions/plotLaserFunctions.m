@@ -5,7 +5,7 @@ function [fig] = plotLaserFunctions(x,y,q,axisscale,labelName,datatype)
     %
     
     fig = figure();
-    mesh(x,y,q,'FaceLighting','gouraud','LineWidth',1);
+    surf(x,y,q,'FaceLighting','gouraud','LineWidth',1);
     title(labelName)
     xlabel('Position x [m]')
     ylabel('Position y [m]')
@@ -14,7 +14,7 @@ function [fig] = plotLaserFunctions(x,y,q,axisscale,labelName,datatype)
     view(0,0)
     grid on
     cb = colorbar;
-    ylabel(cb, 'W/m^2')
+    ylabel(cb, 'MW/m^2')
     set(gca,'fontsize',12)
     
     plottype = datatype;
