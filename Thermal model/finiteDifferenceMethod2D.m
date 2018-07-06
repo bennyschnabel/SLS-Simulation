@@ -7,7 +7,7 @@ function [T] = finiteDifferenceMethod2D(T0,nx,ny,Dx,Dy,dt,q,rho,c_p)
     %
     
     sigma = computateStefanBoltzmannConstant;
-    e = 1;
+    e = 1 * 10 ^ 0;
 
     for j = 1:ny
         for i = 1:nx

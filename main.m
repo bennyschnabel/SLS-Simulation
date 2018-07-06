@@ -1,10 +1,18 @@
 clear variables; close all; clc;
 
 %% Add folders to search path
+addpath('Component model');
 addpath('Laser model');
 addpath('Material model');
 addpath('Thermal model');
 addpath('Useful functions');
+
+%% Component model
+
+% Get all required component parameters
+componentParameter = getComponentParameter();
+
+s = componentParameter.layerThickness;
 
 %% Laser model
 
@@ -18,7 +26,7 @@ r_0 = laserParameter.rawBeamRadius * 10^-3;
 % Focal length [m]
 f = laserParameter.focalLength * 10^-3;
 % Distance to focal point [m]
-a = laserParameter.distanceFocalPoint * 10^-3;
+b = laserParameter.distanceFocalPoint * 10^-3;
 % Laser power [W]
 P = laserParameter.laserPower;
 % Laser Speed [m/s]
@@ -40,7 +48,7 @@ theta = computateBeamDivergenceAngle(lambda, r_0);
 % Calculation of the focal point radius [m]
 r_f = computateFocalPointRadius(f, theta);
 % Calculation of the workpiece radius [m]
-r_w = computateWorkpieceRadius(f, r_0, r_f, a);
+r_w = computateWorkpieceRadius(f, r_0, r_f, b);
 % Calculation of the heat flux intensity at the lense [W/m^2]
 q_0 = computateHeatFluxIntensityLense(P, r_0, r);
 % Calculation of the heat flux intensity at the focal point [W/m^2]
@@ -58,6 +66,8 @@ q_w_max = max(max(q_w));
 %plotMaterialParameter(theta,computateHeatCapacity(theta), 'Heat capacity');
 %plotMaterialParameter(theta,computateHeatConductivity(theta), 'Heat conductivity');
 %plotMaterialParameter(theta,computateThermalDiffusivity(theta), 'Thermal diffusivity');
+
+[R,T,A] = computateReflectionTransmissionAbsorption(s);
 
 %% Thermal model
 
@@ -93,8 +103,10 @@ disp(j);
 dispTest = ['Heating: ',num2str(maxT-273.15),'°C'];
 disp(dispTest)
 i = 1;
-%{
-while i < 5
+
+disp(i);
+
+while i < 1
     disp(i)
     [Temp, maxT] = computateHeatEquation2D(5.0, 0, Temp, T_chamber,T_powderbed);
     disp1 = ['Cooling: ',num2str(maxT-273.15),'°C'];
@@ -108,7 +120,7 @@ while i < 5
 end
 
 a = a - 273.15;
-%}
+
 %% Plot
 
 [x,y] = meshgrid(0:dx:Lx,0:dy:Ly);
@@ -120,9 +132,10 @@ view(0,90);
 %title(titlePlot);
 xlabel('x [m]');
 ylabel('y [m]');
-zlabel('Temperatur °C');
+zlabel('°C')
 cb = colorbar;
-ylabel(cb, 'Temperatur °C');
+ylabel(cb, '°C')
+shading interp
 orient(fig,'landscape');
-print(fig,'-bestfit','Test','-dpdf','-r0');
+print(fig,'-bestfit','Simulation','-dpdf','-r0');
 disp(maxT-273.15);

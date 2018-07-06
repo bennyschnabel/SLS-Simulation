@@ -83,21 +83,27 @@ function [T,maxT, it] = computateHeatEquation2D(tFinal, q_w, u0, T_air, T_bed)
              maxT = maxT;
          end
          
-         % plot solution
-         %{
-         if mod(it,100)
-             figure(1)
-             hold on;
-             surf(x,y,u-273.15);
-             view(0,90);
-             titlePlot = ['Elapsed time: ' num2str(t) ' s'];
-             title(titlePlot);
-             cb = colorbar;
-             ylabel(cb, 'Temperatur °C');
-             %axis([0,L,0,W,-1,1]);
-             drawnow;
+         % Real-time plot
+         realTimePlot='hide';
+         
+         switch realTimePlot
+             case 'show'
+                 disp('show')
+                 if mod(it,100)
+                     hold on
+                     surf(x,y,u-273.15)
+                     view(0,90)
+                     titlePlot = ['Elapsed time: ' num2str(t) ' s'];
+                     title(titlePlot)
+                     cb = colorbar;
+                     ylabel(cb, '°C')
+                     drawnow
+                 end
+             case 'hide'
+                 disp('')
+             otherwise
+                 disp('otherwise')
          end
-         %}
     end
     %{
     fig = figure(1);
