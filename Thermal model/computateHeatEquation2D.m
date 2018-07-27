@@ -61,7 +61,8 @@ function [T,maxT, it] = computateHeatEquation2D(tFinal, q_w, u0, T_air, T_bed)
          
          % set BCs
          u(1,:) = T_bed;
-         u(:,1) = T_bed; u(:,ny) = T_bed;
+         u(:,1) = T_bed; 
+         u(:,ny) = T_bed ;
          
          if q_w == 0
              u(nx,:) = T_air;
@@ -84,11 +85,11 @@ function [T,maxT, it] = computateHeatEquation2D(tFinal, q_w, u0, T_air, T_bed)
          end
          
          % Real-time plot
-         realTimePlot='hide';
+         displayLivePlot='hide';
          
-         switch realTimePlot
+         switch displayLivePlot
              case 'show'
-                 disp('show')
+                 disp('')
                  if mod(it,100)
                      hold on
                      surf(x,y,u-273.15)
@@ -97,25 +98,29 @@ function [T,maxT, it] = computateHeatEquation2D(tFinal, q_w, u0, T_air, T_bed)
                      title(titlePlot)
                      cb = colorbar;
                      ylabel(cb, '°C')
+                     xlabel('x [m]')
+                     ylabel('y [m]')
+                     shading interp
                      drawnow
                  end
              case 'hide'
                  disp('')
              otherwise
-                 disp('otherwise')
+                 disp('')
          end
     end
     %{
     fig = figure(1);
-    surf(x,y,u-273.15);
-    view(0,90);
+    surf(x,y,u-273.15)
+    view(0,90)
     titlePlot = ['Elapsed time: ' num2str(t) ' s'];
-    title(titlePlot);
-    xlabel('x [m]');
-    ylabel('y [m]');
-    zlabel('Temperatur °C');
+    title(titlePlot)
+    xlabel('x [m]')
+    ylabel('y [m]')
+    zlabel('°C')
     cb = colorbar;
-    ylabel(cb, 'Temperatur °C');
-    %orient(fig,'landscape');
-    %print(fig,'-bestfit','Test','-dpdf','-r0');
+    ylabel(cb, '°C')
+    shading interp
+    orient(fig,'landscape')
+    print(fig,'-bestfit','Test','-dpdf','-r0');
     %}

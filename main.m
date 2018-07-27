@@ -5,6 +5,7 @@ addpath('Component model');
 addpath('Laser model');
 addpath('Material model');
 addpath('Thermal model');
+addpath('STL file');
 addpath('Useful functions');
 
 %% Component model
@@ -58,7 +59,7 @@ q_w = computateHeatFluxIntensityWorkpiece(r_0, r_w, q_0);
 % Calculation of the maximal heat flux intensity at the workpiece [W/m^2]
 q_w_max = max(max(q_w));
 
-%plotLaserFunctions(X,Y,q_w * 10^-6,axisscale,'Wärmestromdichte q_w xy', 'pdf');
+%plotLaserFunctions(X,Y,q_w * 10^-6,axisscale,'Waermestromdichte', 'pdf');
 
 %% Material model
 
@@ -75,10 +76,13 @@ thermalParameter = getThermalParameter();
 
 Lx = thermalParameter.lengthOfDomainInX;
 Ly = thermalParameter.lengthOfDomainInY;
+Lz = thermalParameter.lengthOfDomainInZ;
 nx = thermalParameter.numberOfNodesInX;
 ny = thermalParameter.numberOfNodesInY;
+nz = thermalParameter.numberOfNodesInZ;
 dx = Lx/(nx-1);
 dy = Ly/(ny-1);
+dz = Lz/(nz-1);
 T_powderbed = thermalParameter.powderbedTemperature;
 T_chamber = thermalParameter.chamberTemperature;
 
@@ -87,55 +91,69 @@ t_Laser = Lx / v;
 
 % Build IC
 
-u0 = zeros(size(nx,ny));
-
+%u0 = zeros(size(nx,ny,nz);
+u0 = zeros(nx,ny,nz);
 for i = 1 : nx
     for j = 1 : ny
-        u0(i,j) = T_powderbed;
+        for k = 1 : nz
+            u0(i,j,k) = T_powderbed;
+        end
     end
 end
 
 % Initial heating
 
-[Temp, maxT,j] = computateHeatEquation2D(t_Laser, q_w_max, u0, T_chamber,T_powderbed);
-a = Temp(ny-10:ny,nx/2-20:nx/2+20);
-disp(j);
+[Temp, maxT,j] = computateHeatEquation3D(t_Laser, q_w_max, u0, T_chamber,T_powderbed);
+%a = Temp(ny-10:ny,nx/2-20:nx/2+20);
+%disp(j);
 dispTest = ['Heating: ',num2str(maxT-273.15),'°C'];
-disp(dispTest)
+%disp(dispTest)
 i = 1;
 
 disp(i);
 
 while i < 1
-    disp(i)
+    %disp(i)
     [Temp, maxT] = computateHeatEquation2D(5.0, 0, Temp, T_chamber,T_powderbed);
     disp1 = ['Cooling: ',num2str(maxT-273.15),'°C'];
     disp(disp1)
     [Temp, maxT] = computateHeatEquation2D(t_Laser, q_w_max, Temp, T_chamber,T_powderbed);
-    a = [a; Temp(ny-10:ny,nx/2-20:nx/2+20)];
+    %a = [a; Temp(ny-10:ny,nx/2-20:nx/2+20)];
     disp2 = ['Heating: ',num2str(maxT-273.15),'°C'];
     disp(disp2)
     circshift(Temp,2,2);
     i = i + 1;
 end
 
-a = a - 273.15;
+%a = a - 273.15;
 
 %% Plot
 
-[x,y] = meshgrid(0:dx:Lx,0:dy:Ly);
+% Show plot
+displayPlot = 'show';
 
-fig = figure(1);
-surf(x,y,Temp-273.15);
-view(0,90);
-%titlePlot = ['Elapsed time: ' num2str(t) ' s'];
-%title(titlePlot);
-xlabel('x [m]');
-ylabel('y [m]');
-zlabel('°C')
-cb = colorbar;
-ylabel(cb, '°C')
-shading interp
-orient(fig,'landscape');
-print(fig,'-bestfit','Simulation','-dpdf','-r0');
-disp(maxT-273.15);
+switch displayPlot
+    case 'show'
+        disp('')
+        [x,y,z] = meshgrid(0:dx:Lx,0:dy:Ly,0:dz:Lz);
+        region = [0,Lx,0,Ly,0,Lz];
+        xSliced = linspace(0, Lx, 9);
+        ySliced = linspace(0, Ly, 9);
+        zSliced = linspace(0, Lz, 9);
+        fig = figure();
+        slice(x,y,z,Temp-273.15,xSliced,Inf,zSliced);
+        %   view(0,90)
+        xlabel('x [m]')
+        ylabel('y [m]')
+        zlabel('z [m]')
+        cb = colorbar;
+        ylabel(cb, '°C')
+        shading interp
+        %orient(fig,'landscape')
+        %print(fig,'-bestfit','Simulation','-dpdf','-r0')
+        %disp(maxT-273.15);
+    case 'hide'
+        disp('')
+    otherwise
+        disp('')
+end

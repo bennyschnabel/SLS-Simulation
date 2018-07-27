@@ -6,12 +6,12 @@ function [fig] = plotLaserFunctions(x,y,q,axisscale,labelName,datatype)
     
     fig = figure();
     surf(x,y,q,'FaceLighting','gouraud','LineWidth',1);
-    title(labelName)
-    xlabel('Position x [m]')
-    ylabel('Position y [m]')
-    zlabel('Wärmestromdichte')
-    axis([-axisscale axisscale -axisscale axisscale])
-    view(0,0)
+    %title(labelName)
+    xlabel('Position x')
+    ylabel('Position y')
+    %zlabel('Wärmestromdichte')
+    %axis([-axisscale axisscale -axisscale axisscale])
+    %view(0,0)
     grid on
     cb = colorbar;
     ylabel(cb, 'MW/m^2')

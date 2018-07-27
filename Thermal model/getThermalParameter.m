@@ -5,13 +5,17 @@
 
 function parameter = getThermalParameter()
     % Number of nodes in x direction
-    parameter.numberOfNodesInX = 200;
+    parameter.numberOfNodesInX = 20;
     % Number of nodes in y direction
-    parameter.numberOfNodesInY = 200;
+    parameter.numberOfNodesInY = 20;
+    % Number of nodes in z direction
+    parameter.numberOfNodesInZ = 20;
     % Length of domain in x direction [m]
     parameter.lengthOfDomainInX = 0.2;
     % Length of domain in y direction [m]
     parameter.lengthOfDomainInY = 0.2;
+    % Length of domain in z direction [m]
+    parameter.lengthOfDomainInZ = 0.2;
     % Layer thickness [m]
     parameter.layerThickness = 2 * 10^-4;
     % Chamber temperature [K]
