@@ -1,4 +1,4 @@
-clear variables; close all; clc;
+%clear variables; close all; clc;
 
 %% Add folders to search path
 addpath('Component model');
@@ -70,6 +70,13 @@ q_w_max = max(max(q_w));
 
 [R,T,A] = computateReflectionTransmissionAbsorption(s);
 
+%% STL model
+
+%[model, modelHeight] = buildModel();
+%text1 = 'Model height: ';
+%text2 = ' m';
+%disp([text1 num2str(modelHeight) text2])
+
 %% Thermal model
 
 thermalParameter = getThermalParameter();
@@ -87,7 +94,7 @@ T_powderbed = thermalParameter.powderbedTemperature;
 T_chamber = thermalParameter.chamberTemperature;
 
 % Laser time
-t_Laser = Lx / v;
+t_Laser = 0.5;% Lx / v;
 
 % Build IC
 
@@ -102,17 +109,18 @@ for i = 1 : nx
 end
 
 % Initial heating
-
+%firstLayer = model(:,:,nz);
+firstLayer = gridOUTPUT(:,:,nz);
 [Temp, maxT,j] = computateHeatEquation3D(t_Laser, q_w_max, u0, T_chamber,T_powderbed);
 %a = Temp(ny-10:ny,nx/2-20:nx/2+20);
 %disp(j);
 dispTest = ['Heating: ',num2str(maxT-273.15),'°C'];
-%disp(dispTest)
+disp(dispTest)
 i = 1;
+%i = modelHeight/dz;
+disp(i)
 
-disp(i);
-
-while i < 1
+while i < 1%modelHeight/dz
     %disp(i)
     [Temp, maxT] = computateHeatEquation2D(5.0, 0, Temp, T_chamber,T_powderbed);
     disp1 = ['Cooling: ',num2str(maxT-273.15),'°C'];
@@ -141,7 +149,7 @@ switch displayPlot
         ySliced = linspace(0, Ly, 9);
         zSliced = linspace(0, Lz, 9);
         fig = figure();
-        slice(x,y,z,Temp-273.15,xSliced,Inf,zSliced);
+        slice(x,y,z,Temp-273.15,xSliced,ySliced,Inf);
         %   view(0,90)
         xlabel('x [m]')
         ylabel('y [m]')
@@ -157,3 +165,10 @@ switch displayPlot
     otherwise
         disp('')
 end
+
+
+fin = gridOUTPUT .* Temp;
+figure();
+slice(x,y,z,fin-273.15,xSliced,ySliced,Inf);
+cb = colorbar;
+ylabel(cb, '°C')

@@ -11,7 +11,7 @@ function [T,maxT, it] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed)
     % Get thermal parameters
     thermalParameter = getThermalParameter();
     
-    a = computateThermalDiffusivity(184.3) * 10^5;
+    a = computateThermalDiffusivity(184.3) * 10^6;
     Lx = thermalParameter.lengthOfDomainInX;
     Ly = thermalParameter.lengthOfDomainInY;
     Lz = thermalParameter.lengthOfDomainInZ;
@@ -45,7 +45,7 @@ function [T,maxT, it] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed)
     t=dt0; it=0; u=u0; dt=dt0;
     
     q = zeros(nx,ny,nz);
-    q(nx-1,:,:) = q_w/thermalParameter.layerThickness;
+    q(:,:,nz-1) = q_w/thermalParameter.layerThickness;
     
     maxT = 0;
     
@@ -74,14 +74,14 @@ function [T,maxT, it] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed)
          % set BCs
          u(1,:,:) = T_bed;
          u(:,1,:) = T_bed;
-         T(:,:,1) = T_bed;
+         u(:,:,1) = T_bed;
+         u(nx,:,:) = T_bed ;
          u(:,ny,:) = T_bed ;
-         u(:,:,nz) = T_bed ;
          
          if q_w == 0
-             u(nx,:,:) = T_air;
+             u(:,:,nz) = T_air;
          else
-             u(nx,:,:) = uo(nx-1,:,:);
+             u(:,:,nz) = uo(:,:,nz-1);
          end
          
          % compute time step
@@ -104,6 +104,8 @@ function [T,maxT, it] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed)
          switch displayLivePlot
              case 'show'
                  disp('')
+                 if mod(it,100); slice(x,y,z,T-273.15,Lx/2,Ly/2,Lz/2); axis(region); titlePlot = ['Elapsed time: ' num2str(t) ' s']; title(titlePlot); drawnow; end
+                 %{
                  if mod(it,100)
                      hold on
                      slice(x,y,z,T - 273.15,xSliced,Inf,zSliced);
@@ -119,6 +121,7 @@ function [T,maxT, it] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed)
                      shading interp
                      drawnow
                  end
+                 %}
              case 'hide'
                  disp('')
              otherwise
