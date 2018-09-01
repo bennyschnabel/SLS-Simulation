@@ -17,5 +17,5 @@ function parameter = getLaserParameter()
     % Distance to focal point [mm]
     parameter.distanceFocalPoint  = 10.0;
     % Laser Speed [m/s]
-    parameter.laserSpeed = 2.0;%0.1;
+    parameter.laserSpeed = 1.0;%0.1;
 end

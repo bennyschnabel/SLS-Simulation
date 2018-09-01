@@ -1,19 +1,74 @@
-%clear variables; close all; clc;
+clear variables; close all; clc;
 
 %% Add folders to search path
-addpath('Component model');
+%addpath('Component model');
 addpath('Laser model');
 addpath('Material model');
 addpath('Thermal model');
 addpath('STL file');
 addpath('Useful functions');
 
-%% Component model
+tic;
 
-% Get all required component parameters
-componentParameter = getComponentParameter();
+%% STL file import
 
-s = componentParameter.layerThickness;
+stlName = 'Teil2.STL';
+stlModel  = stlread(stlName);
+[val,idx] = max([stlModel.vertices]);
+maxLengthOfSTLModel = max(val) * 10^-3;
+
+%% Thermal model
+
+thermalParameter = getThermalParameter();
+
+Lx = maxLengthOfSTLModel;
+Ly = maxLengthOfSTLModel;
+Lz = maxLengthOfSTLModel;
+nx = thermalParameter.numberOfNodesInX;
+ny = thermalParameter.numberOfNodesInY;
+nz = thermalParameter.numberOfNodesInZ;
+dx = Lx/(nx-1);
+dy = Ly/(ny-1);
+dz = Lz/(nz-1);
+
+layerThickness = maxLengthOfSTLModel / nx;
+
+T_powderbed = thermalParameter.powderbedTemperature;
+T_chamber = thermalParameter.chamberTemperature;
+
+%% STL model
+
+% Create Voxel- Matrix
+[gridOUTPUT] = VOXELISE(nx,ny,nz,stlName,'xyz');
+
+% Rotate Matrix
+%gridOUTPUT = rot90(gridOUTPUT,1);
+
+% Show Voxel plot (show or hide)
+displaySTLPlot = 'hide';
+
+switch displaySTLPlot
+    case 'show'
+        disp('')
+        fig = figure();
+        [vol_handle] = VoxelPlotter(gridOUTPUT,1);
+        alpha(0.8)
+        az = -37;
+        el = 30;
+        view(az, el);
+        set(gca,'xlim',[0 nx+1], 'ylim',[0 ny+1], 'zlim',[0 nz+1])
+        xlabel('Nodes in x')
+        ylabel('Nodes in y')
+        zlabel('Nodes in z')
+        % Uncomment for pdf export
+        %orient(fig,'landscape')
+        %print(fig,'-bestfit','displaySTLPlot','-dpdf','-r0')
+    case 'hide'
+        disp('')
+    otherwise
+        disp('')
+        
+end
 
 %% Laser model
 
@@ -42,8 +97,6 @@ y = -axisscale : 0.001 : axisscale;
 
 r = sqrt(X.^2 + Y.^2);
 
-%P = [0: 1 : 30];
-
 % Calculation of the beam divergence angle [-]
 theta = computateBeamDivergenceAngle(lambda, r_0);
 % Calculation of the focal point radius [m]
@@ -59,8 +112,6 @@ q_w = computateHeatFluxIntensityWorkpiece(r_0, r_w, q_0);
 % Calculation of the maximal heat flux intensity at the workpiece [W/m^2]
 q_w_max = max(max(q_w));
 
-%plotLaserFunctions(X,Y,q_w * 10^-6,axisscale,'Waermestromdichte', 'pdf');
-
 %% Material model
 
 %theta = 0 : 0.01 : 250;
@@ -68,37 +119,11 @@ q_w_max = max(max(q_w));
 %plotMaterialParameter(theta,computateHeatConductivity(theta), 'Heat conductivity');
 %plotMaterialParameter(theta,computateThermalDiffusivity(theta), 'Thermal diffusivity');
 
-[R,T,A] = computateReflectionTransmissionAbsorption(s);
+%[R,T,A] = computateReflectionTransmissionAbsorption(s);
 
-%% STL model
-
-%[model, modelHeight] = buildModel();
-%text1 = 'Model height: ';
-%text2 = ' m';
-%disp([text1 num2str(modelHeight) text2])
-
-%% Thermal model
-
-thermalParameter = getThermalParameter();
-
-Lx = thermalParameter.lengthOfDomainInX;
-Ly = thermalParameter.lengthOfDomainInY;
-Lz = thermalParameter.lengthOfDomainInZ;
-nx = thermalParameter.numberOfNodesInX;
-ny = thermalParameter.numberOfNodesInY;
-nz = thermalParameter.numberOfNodesInZ;
-dx = Lx/(nx-1);
-dy = Ly/(ny-1);
-dz = Lz/(nz-1);
-T_powderbed = thermalParameter.powderbedTemperature;
-T_chamber = thermalParameter.chamberTemperature;
-
-% Laser time
-t_Laser = 0.5;% Lx / v;
+%% Heat simulation
 
 % Build IC
-
-%u0 = zeros(size(nx,ny,nz);
 u0 = zeros(nx,ny,nz);
 for i = 1 : nx
     for j = 1 : ny
@@ -109,66 +134,64 @@ for i = 1 : nx
 end
 
 % Initial heating
-%firstLayer = model(:,:,nz);
-firstLayer = gridOUTPUT(:,:,nz);
-[Temp, maxT,j] = computateHeatEquation3D(t_Laser, q_w_max, u0, T_chamber,T_powderbed);
-%a = Temp(ny-10:ny,nx/2-20:nx/2+20);
-%disp(j);
-dispTest = ['Heating: ',num2str(maxT-273.15),'°C'];
-disp(dispTest)
-i = 1;
-%i = modelHeight/dz;
-disp(i)
 
-while i < 1%modelHeight/dz
-    %disp(i)
-    [Temp, maxT] = computateHeatEquation2D(5.0, 0, Temp, T_chamber,T_powderbed);
-    disp1 = ['Cooling: ',num2str(maxT-273.15),'°C'];
-    disp(disp1)
-    [Temp, maxT] = computateHeatEquation2D(t_Laser, q_w_max, Temp, T_chamber,T_powderbed);
-    %a = [a; Temp(ny-10:ny,nx/2-20:nx/2+20)];
-    disp2 = ['Heating: ',num2str(maxT-273.15),'°C'];
-    disp(disp2)
-    circshift(Temp,2,2);
+LayerShift = circshift(gridOUTPUT,[0 0 -1]);
+firstLayer = LayerShift(:,:,nz);
+
+% Laser time per layer
+t_Laser = layerThickness * sum(firstLayer(:)) / v;
+t_Laser_mean = t_Laser;
+
+[Temp, maxT,j] = computateHeatEquation3D(t_Laser, q_w_max, u0, T_chamber, T_powderbed, ...
+    firstLayer, LayerShift, layerThickness, Lx, Ly, Lz, nx, ny, nz);
+i = 1;
+
+while i < nx
+    disp(i)
+    % Cooling while moving down
+    %{
+    [Temp, maxT,j] = computateHeatEquation3D(1*10^-10, 0, Temp, T_chamber, T_powderbed, ...
+        firstLayer, LayerShift, Lx, Ly, Lz, nx, ny, nz);
+    %}
+    
+    % Moving down
+    LayerShift = circshift(LayerShift,[0 0 -1]);
+    firstLayer = LayerShift(:,:,nz);
+    
+    % Laser time per layer
+    t_Laser = layerThickness * sum(firstLayer(:)) / v;
+    t_Laser_mean = t_Laser_mean + t_Laser;
+    
+    % Heating
+    [Temp, maxT,j] = computateHeatEquation3D(t_Laser, q_w_max, Temp, T_chamber, T_powderbed, ...
+        firstLayer, LayerShift, layerThickness, Lx, Ly, Lz, nx, ny, nz);
+    
     i = i + 1;
 end
 
-%a = a - 273.15;
-
-%% Plot
-
-% Show plot
-displayPlot = 'show';
-
-switch displayPlot
-    case 'show'
-        disp('')
-        [x,y,z] = meshgrid(0:dx:Lx,0:dy:Ly,0:dz:Lz);
-        region = [0,Lx,0,Ly,0,Lz];
-        xSliced = linspace(0, Lx, 9);
-        ySliced = linspace(0, Ly, 9);
-        zSliced = linspace(0, Lz, 9);
-        fig = figure();
-        slice(x,y,z,Temp-273.15,xSliced,ySliced,Inf);
-        %   view(0,90)
-        xlabel('x [m]')
-        ylabel('y [m]')
-        zlabel('z [m]')
-        cb = colorbar;
-        ylabel(cb, '°C')
-        shading interp
-        %orient(fig,'landscape')
-        %print(fig,'-bestfit','Simulation','-dpdf','-r0')
-        %disp(maxT-273.15);
-    case 'hide'
-        disp('')
-    otherwise
-        disp('')
-end
-
+% Build meshgrid for plot
+[x,y,z] = meshgrid(0:dx:Lx,0:dy:Ly,0:dz:Lz);
+region = [0,Lx,0,Ly,0,Lz];
 
 fin = gridOUTPUT .* Temp;
-figure();
-slice(x,y,z,fin-273.15,xSliced,ySliced,Inf);
+
+fig = figure();
+fin(fin == 0) = NaN;
+slice(x,y,z,fin-273.15,Lx/2,Ly/2,Lz/2);
+axis(region);
+xlabel('x [m]')
+ylabel('y [m]')
+zlabel('z [m]')
 cb = colorbar;
 ylabel(cb, '°C')
+orient(fig,'landscape')
+print(fig,'-bestfit','displaySimulationPlot','-dpdf','-r0')
+
+%% Export information
+nodesNumber = ['Number of nodes: ', num2str(nx)];
+laserTime = ['Average laser time per layer: ', num2str(t_Laser_mean/nx), ' s'];
+averageTime = ['Average runtime: ', num2str(toc/60), ' min'];
+
+disp(nodesNumber)
+disp(laserTime)
+disp(averageTime)

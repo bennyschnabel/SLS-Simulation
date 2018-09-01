@@ -1,4 +1,4 @@
-function [T,maxT, it] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed)
+function [T,maxT, it] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed, layer, layerShift, layerThickness, Lx, Ly, Lz, nx, ny, nz)
     % [T,maxT, it] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed)
     %
     % Bachelor thesis equation number: ()
@@ -12,12 +12,6 @@ function [T,maxT, it] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed)
     thermalParameter = getThermalParameter();
     
     a = computateThermalDiffusivity(184.3) * 10^6;
-    Lx = thermalParameter.lengthOfDomainInX;
-    Ly = thermalParameter.lengthOfDomainInY;
-    Lz = thermalParameter.lengthOfDomainInZ;
-    nx = thermalParameter.numberOfNodesInX;
-    ny = thermalParameter.numberOfNodesInY;
-    nz = thermalParameter.numberOfNodesInZ;
     dx = Lx/(nx-1);
     dy = Ly/(ny-1);
     dz = Lz/(nz-1);
@@ -45,7 +39,8 @@ function [T,maxT, it] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed)
     t=dt0; it=0; u=u0; dt=dt0;
     
     q = zeros(nx,ny,nz);
-    q(:,:,nz-1) = q_w/thermalParameter.layerThickness;
+    q(:,:,nz-1) = layer;
+    q(:,:,nz-1) = q(:,:,nz-1) * (q_w/layerThickness);
     
     maxT = 0;
     
@@ -60,23 +55,17 @@ function [T,maxT, it] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed)
     zSliced = linspace(0.1, Lz, 5);
     
     while t < tFinal
-         
         % RK stages
         uo=u;
-        %q(nx-1:nx,:) = 0;
-        %q(nx-1:nx,:,:) = q_w/thermalParameter.layerThickness;
+        u = finiteDifferenceMethod3D(uo,nx,ny,nz,Dx,Dy,Dz,dt,q,rho,c_p);
+        T = u;
         
-         % forward euler solver
-         %u = finiteDifferenceMethod2D(uo,nx,ny,Dx,Dy,dt,q,rho,c_p);
-         u = finiteDifferenceMethod3D(uo,nx,ny,nz,Dx,Dy,Dz,dt,q,rho,c_p);
-         T = u;
-         
-         % set BCs
-         u(1,:,:) = T_bed;
-         u(:,1,:) = T_bed;
-         u(:,:,1) = T_bed;
-         u(nx,:,:) = T_bed ;
-         u(:,ny,:) = T_bed ;
+        % set BCs
+        u(1,:,:) = T_bed;
+        u(:,1,:) = T_bed;
+        u(:,:,1) = T_bed;
+        u(nx,:,:) = T_bed ;
+        u(:,ny,:) = T_bed ;
          
          if q_w == 0
              u(:,:,nz) = T_air;
@@ -104,42 +93,20 @@ function [T,maxT, it] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed)
          switch displayLivePlot
              case 'show'
                  disp('')
-                 if mod(it,100); slice(x,y,z,T-273.15,Lx/2,Ly/2,Lz/2); axis(region); titlePlot = ['Elapsed time: ' num2str(t) ' s']; title(titlePlot); drawnow; end
-                 %{
                  if mod(it,100)
-                     hold on
-                     slice(x,y,z,T - 273.15,xSliced,Inf,zSliced);
+                     fin = layerShift .* T;
+                     fin(fin == 0) = NaN;
+                     slice(x,y,z,fin-273.15,Lx/2,Ly/2,Lz/2);
                      axis(region);
-                     %view(0,90)
-                     titlePlot = ['Elapsed time: ' num2str(t) ' s'];
-                     title(titlePlot)
+                     titlePlot = ['Elapsed time: ' num2str(t) ' s']; 
+                     title(titlePlot); 
                      cb = colorbar;
-                     ylabel(cb, '°C')
-                     xlabel('x [m]')
-                     ylabel('y [m]')
-                     zlabel('z [m]')
-                     shading interp
-                     drawnow
+                     ylabel(cb, '°C');
+                     drawnow;
                  end
-                 %}
              case 'hide'
                  disp('')
              otherwise
                  disp('')
          end
     end
-    %{
-    fig = figure(1);
-    surf(x,y,u-273.15)
-    view(0,90)
-    titlePlot = ['Elapsed time: ' num2str(t) ' s'];
-    title(titlePlot)
-    xlabel('x [m]')
-    ylabel('y [m]')
-    zlabel('°C')
-    cb = colorbar;
-    ylabel(cb, '°C')
-    shading interp
-    orient(fig,'landscape')
-    print(fig,'-bestfit','Test','-dpdf','-r0');
-    %}
