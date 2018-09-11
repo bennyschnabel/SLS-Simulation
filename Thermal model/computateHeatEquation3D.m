@@ -1,5 +1,5 @@
-function [T,maxT, it] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed, layer, layerShift, layerThickness, Lx, Ly, Lz, nx, ny, nz)
-    % [T,maxT, it] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed)
+function [T,maxT] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed, layer, layerShift, layerThickness, Lx, Ly, Lz, nx, ny, nz)
+    % [T,maxT] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed)
     %
     % Bachelor thesis equation number: ()
     % 
@@ -9,7 +9,7 @@ function [T,maxT, it] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed, l
     %% Parameters
     
     % Get thermal parameters
-    thermalParameter = getThermalParameter();
+    %thermalParameter = getThermalParameter();
     
     a = computateThermalDiffusivity(184.3) * 10^6;
     dx = Lx/(nx-1);
@@ -81,8 +81,11 @@ function [T,maxT, it] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed, l
          % Update iteration counter and time
          it = it + 1; t = t + dt;
          
-         if maxT < max(max(T))
-             maxT = max(T(:,:,:));
+         heatedLayer = layerShift .* T;
+         heatedLayer(heatedLayer == 0) = NaN;
+         
+         if maxT < max(max(heatedLayer(:,:,nz)))
+             maxT = max(max(heatedLayer(:,:,nz)));
          else
              maxT = maxT;
          end

@@ -4,12 +4,13 @@
 %
 
 function parameter = getThermalParameter()
+    a = 20;
     % Number of nodes in x direction
-    parameter.numberOfNodesInX = 25;
+    parameter.numberOfNodesInX = a;
     % Number of nodes in y direction
-    parameter.numberOfNodesInY = 25;
+    parameter.numberOfNodesInY = a;
     % Number of nodes in z direction
-    parameter.numberOfNodesInZ = 25;
+    parameter.numberOfNodesInZ = a;
     % Length of domain in x direction [m]
     %parameter.lengthOfDomainInX = 0.1;
     % Length of domain in y direction [m]

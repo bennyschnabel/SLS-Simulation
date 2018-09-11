@@ -25,5 +25,8 @@ function [fig] = plotLaserFunctions(x,y,q,axisscale,labelName,datatype)
         case 'pdf'
             orient(fig,'landscape')
             print(fig,'-bestfit',labelName,'-dpdf','-r0')
+        case 'fig'
+            name = [labelName '.fig'];
+            savefig(fig, name)
     end
     

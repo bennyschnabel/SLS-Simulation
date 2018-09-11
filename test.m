@@ -3,8 +3,8 @@ i = 1;
 fig = figure();
 hold on;
 
-writerObj = VideoWriter('out.avi'); % Name it.
-writerObj.FrameRate = 100; % How many frames per second.
+writerObj = VideoWriter('out4.avi'); % Name it.
+writerObj.FrameRate = 8; % How many frames per second.
 open(writerObj); 
 
 while i <= nx

@@ -33,5 +33,8 @@ function [R,T,A] = computateReflectionTransmissionAbsorption(s)
         T = 0.006;
         A = 0.944;
     else
-        disp('not defined');
+        R = NaN;
+        T = NaN;
+        A = NaN;
+        disp('R, T, A not defined due to not defined layer thickness');
     end
