@@ -1,18 +1,31 @@
 clear variables; close all; clc;
 
 %% Add folders to search path
-%addpath('Component model');
 addpath('Laser model');
 addpath('Material model');
-addpath('Thermal model');
+addpath('Reports');
 addpath('STL file');
+addpath('Thermal model');
 addpath('Useful functions');
 
 tic;
 
+%% Create report
+
+fileDate = datestr(now,'DD-mm-YYYY-HH-MM-SS');
+fileName = ['Report-', fileDate, '.txt'];
+savePath = './Reports/';
+fileID = fopen([savePath fileName],'wt');
+
 %% STL file import
 
 stlName = 'Teil2.STL';
+% Display STL file name in console
+disp(stlName)
+% Write data to report
+fprintf(fileID, 'STL file name: %s\n', stlName);
+fprintf(fileID, '-----------------------\n');
+% Get the max length of the STL file
 stlModel  = stlread(stlName);
 [val,idx] = max([stlModel.vertices]);
 maxLengthOfSTLModel = max(val) * 10^-3;
@@ -31,21 +44,43 @@ dx = Lx/(nx-1);
 dy = Ly/(ny-1);
 dz = Lz/(nz-1);
 
-layerThickness = maxLengthOfSTLModel / nx;
+nodesThickness = maxLengthOfSTLModel / nx;
 
 T_powderbed = thermalParameter.powderbedTemperature;
 T_chamber = thermalParameter.chamberTemperature;
+
+% Write data to report
+fprintf(fileID, 'Number of nodes (layers): %d\n', nx);
+fprintf(fileID, 'Nodes thickness: %0.3f mm\n', nodesThickness*10^3);
+fprintf(fileID, 'Powderbed temperature: %.2f °C\n', T_powderbed-273.15);
+fprintf(fileID, 'Chamber temperature: %.2f °C\n', T_chamber-273.15);
 
 %% STL model
 
 % Create Voxel- Matrix
 [gridOUTPUT] = VOXELISE(nx,ny,nz,stlName,'xyz');
 
-% Rotate Matrix
+% Rotate Voxel- Matrix along z axis
+
+rotateZAxis = '0';
+
+switch rotateZAxis
+    case '0'
+        gridOUTPUT = rot90(gridOUTPUT,0);
+    case '90'
+        gridOUTPUT = rot90(gridOUTPUT,1);
+    case '180'
+        gridOUTPUT = rot90(gridOUTPUT,3);
+    case '270'
+        gridOUTPUT = rot90(gridOUTPUT,2);
+    otherwise 
+        disp('')
+end
+        
 %gridOUTPUT = rot90(gridOUTPUT,1);
 
 % Show Voxel plot (show or hide)
-displaySTLPlot = 'show';
+displaySTLPlot = 'hide';
 
 switch displaySTLPlot
     case 'show'
@@ -60,13 +95,20 @@ switch displaySTLPlot
         xlabel('Nodes in x')
         ylabel('Nodes in y')
         zlabel('Nodes in z')
-        % Uncomment for pdf export
-        %orient(fig,'landscape')
-        %print(fig,'-bestfit','displaySTLPlot','-dpdf','-r0')
+        
+        exportSTLPlot = 'false';
+        
+        switch exportSTLPlot
+            case 'true'
+                orient(fig,'landscape')
+                print(fig,'-bestfit','displaySTLPlot','-dpdf','-r0')
+            case 'false'
+                disp('')
+        end
     case 'hide'
         disp('')
     otherwise
-        disp('')
+        disp('')     
 end
 
 %% Laser model
@@ -84,8 +126,16 @@ f = laserParameter.focalLength * 10^-3;
 b = laserParameter.distanceFocalPoint * 10^-3;
 % Laser power [W]
 P = laserParameter.laserPower;
-% Laser Speed [m/s]
+% Laser speed [m/s]
 v = laserParameter.laserSpeed;
+
+% Write data to report
+fprintf(fileID, 'Wave length: %.2f mm\n', lambda * 10^3);
+fprintf(fileID, 'Raw beam radius at focusing lens: %.2f mm\n', r_0 * 10^3);
+fprintf(fileID, 'Focal length: %.2f mm\n', f * 10^3);
+fprintf(fileID, 'Distance to focal point: %.2f mm\n', b * 10^3);
+fprintf(fileID, 'Laser power: %.2f W\n', P);
+fprintf(fileID, 'Laser speed: %.2f m/s\n', v);
 
 axisscale = 0.02;
 
@@ -111,6 +161,11 @@ q_w = computateHeatFluxIntensityWorkpiece(r_0, r_w, q_0);
 % Calculation of the maximal heat flux intensity at the workpiece [W/m^2]
 q_w_max = max(max(q_w));
 
+%plotLaserFunctions(X, Y, q_w * 10^-6, axisscale, 'Waermestromdichte', 'fig');
+
+% Write data to report
+fprintf(fileID, 'Heat flux intensity at the workpiece: %.2f MW/m^2\n', q_w_max * 10^-6);
+
 %% Material model
 
 %theta = 0 : 0.01 : 250;
@@ -118,7 +173,10 @@ q_w_max = max(max(q_w));
 %plotMaterialParameter(theta,computateHeatConductivity(theta), 'Heat conductivity');
 %plotMaterialParameter(theta,computateThermalDiffusivity(theta), 'Thermal diffusivity');
 
-%[R,T,A] = computateReflectionTransmissionAbsorption(s);
+[R,T,A] = computateReflectionTransmissionAbsorption(nodesThickness);
+
+% Write data to report
+fprintf(fileID, 'Reflection: %.2f, transmission: %0.2f, absorption: %0.2f\n', R, T, A);
 
 %% Heat simulation
 
@@ -138,15 +196,31 @@ LayerShift = circshift(gridOUTPUT,[0 0 -1]);
 firstLayer = LayerShift(:,:,nz);
 
 % Laser time per layer
-t_Laser = layerThickness * sum(firstLayer(:)) / v;
-t_Laser_mean = 
+t_Laser = nodesThickness * sum(firstLayer(:)) / v;
+t_Laser_mean = t_Laser;
 
-[Temp, maxT,j] = computateHeatEquation3D(t_Laser, q_w_max, u0, T_chamber, T_powderbed, ...
-    firstLayer, LayerShift, layerThickness, Lx, Ly, Lz, nx, ny, nz);
+% Display layer and time information
 i = 1;
+layerNumber = ['Layer: ', num2str(i), '; laser exposure time: ', num2str(t_Laser), ' s'];
+disp(layerNumber)
+
+[Temp, maxT] = computateHeatEquation3D(t_Laser, q_w_max, u0, T_chamber, T_powderbed, ...
+    firstLayer, LayerShift, nodesThickness, Lx, Ly, Lz, nx, ny, nz);
+
+% Display layer and temperature information
+layerNumberTemperature = ['Layer: ', num2str(i), '; maximum temperature: ', num2str(maxT-273.15), ' °C'];
+disp(layerNumberTemperature)
+disp('-------------------')
+
+% Write data to report
+fprintf(fileID, '---------------------------\n');
+fprintf(fileID, 'Layer no: %d\n', i);
+fprintf(fileID, 'Laser exposure time: %0.3f s\n', t_Laser);
+fprintf(fileID, 'Maximum temperature: %0.3f °C\n', maxT-273.15);
 
 while i < nx
-    disp(i)
+    i = i + 1;
+    
     % Cooling while moving down
     %{
     [Temp, maxT,j] = computateHeatEquation3D(1*10^-10, 0, Temp, T_chamber, T_powderbed, ...
@@ -158,13 +232,27 @@ while i < nx
     firstLayer = LayerShift(:,:,nz);
     
     % Laser time per layer
-    t_Laser = layerThickness * sum(firstLayer(:)) / v;
+    t_Laser = nodesThickness * sum(firstLayer(:)) / v;
+    t_Laser_mean = t_Laser_mean + t_Laser;
     
+    % Display layer and time information
+    layerNumber = ['Layer: ', num2str(i), '; laser exposure time: ', num2str(t_Laser), ' s'];
+    disp(layerNumber)
+
     % Heating
-    [Temp, maxT,j] = computateHeatEquation3D(t_Laser, q_w_max, Temp, T_chamber, T_powderbed, ...
-        firstLayer, LayerShift, layerThickness, Lx, Ly, Lz, nx, ny, nz);
+    [Temp, maxT] = computateHeatEquation3D(t_Laser, q_w_max, Temp, T_chamber, T_powderbed, ...
+        firstLayer, LayerShift, nodesThickness, Lx, Ly, Lz, nx, ny, nz);
     
-    i = i + 1;
+    % Display layer and temperature information
+    layerNumberTemperature = ['Layer: ', num2str(i), '; maximum temperature : ', num2str(maxT-273.15), ' °C'];
+    disp(layerNumberTemperature)
+    disp('-------------------')
+    
+    % Write data to report
+    fprintf(fileID, '---------------------------\n');
+    fprintf(fileID, 'Layer no: %d\n', i);
+    fprintf(fileID, 'Laser exposure time: %0.3f s\n', t_Laser);
+    fprintf(fileID, 'Maximum temperature: %0.3f °C\n', maxT-273.15);
 end
 
 % Build meshgrid for plot
@@ -175,21 +263,40 @@ fin = gridOUTPUT .* Temp;
 
 fig = figure();
 fin(fin == 0) = NaN;
-slice(x,y,z,fin-273.15,Lx/2,Ly/2,Lz/2);
+numberOfSlices = 7;
+xSliced = linspace(0, Lx, numberOfSlices);
+ySliced = linspace(0, Ly, numberOfSlices);
+zSliced = linspace(0, Lz, numberOfSlices);
+%h = slice(x,y,z,fin-273.15,Lx/2,Ly/2,Lz/2);
+h = slice(x,y,z,fin-273.15,xSliced,ySliced,Inf);
 axis(region);
-xlabel('x [m]')
-ylabel('y [m]')
-zlabel('z [m]')
+set(h,'edgecolor','none')
+set(gca,'xtick',[])
+set(gca,'ytick',[])
+set(gca,'ztick',[])
+xlabel('x')
+ylabel('y')
+zlabel('z')
 cb = colorbar;
 ylabel(cb, '°C')
 orient(fig,'landscape')
-print(fig,'-bestfit','displaySimulationPlot','-dpdf','-r0')
+fileName = ['SimulationPlot-', fileDate];
+print(fig,'-bestfit',fileName,'-dpdf','-r0')
+
+savefig('PeaksFile.fig')
 
 %% Export information
-nodesNumber = ['Number of nodes: ', num2str(nx)];
-laserTime = ['Laser time per layer: ', num2str(t_Laser), ' s'];
+nodesNumber = ['Number of nodes (layers): ', num2str(nx)];
+laserTime = ['Average laser time per layer: ', num2str(t_Laser_mean/nx), ' s'];
 averageTime = ['Average runtime: ', num2str(toc/60), ' min'];
 
 disp(nodesNumber)
 disp(laserTime)
 disp(averageTime)
+
+% Write data to report
+fprintf(fileID, '---------------------------\n');
+fprintf(fileID, 'Average laser time per layer: %0.3f s\n', t_Laser_mean/nx);
+fprintf(fileID, 'Average runtime: %0.3f min\n', toc/60);
+
+fclose(fileID);

@@ -19,7 +19,7 @@ fileID = fopen([savePath fileName],'wt');
 
 %% STL file import
 
-stlName = 'Teil4.STL';
+stlName = 'Teil2.STL';
 % Display STL file name in console
 disp(stlName)
 % Write data to report
@@ -218,7 +218,7 @@ fprintf(fileID, 'Layer no: %d\n', i);
 fprintf(fileID, 'Laser exposure time: %0.3f s\n', t_Laser);
 fprintf(fileID, 'Maximum temperature: %0.3f °C\n', maxT-273.15);
 
-while i < 1%nx
+while i < nx
     i = i + 1;
     
     % Cooling while moving down
@@ -263,15 +263,27 @@ fin = gridOUTPUT .* Temp;
 
 fig = figure();
 fin(fin == 0) = NaN;
-slice(x,y,z,fin-273.15,Lx/2,Ly/2,Lz/2);
+numberOfSlices = 7;
+xSliced = linspace(0, Lx, numberOfSlices);
+ySliced = linspace(0, Ly, numberOfSlices);
+zSliced = linspace(0, Lz, numberOfSlices);
+%h = slice(x,y,z,fin-273.15,Lx/2,Ly/2,Lz/2);
+h = slice(x,y,z,fin-273.15,xSliced,ySliced,Inf);
 axis(region);
-xlabel('x [m]')
-ylabel('y [m]')
-zlabel('z [m]')
+set(h,'edgecolor','none')
+set(gca,'xtick',[])
+set(gca,'ytick',[])
+set(gca,'ztick',[])
+xlabel('x')
+ylabel('y')
+zlabel('z')
 cb = colorbar;
 ylabel(cb, '°C')
+fileName = ['SimulationPlot-', fileDate];
 orient(fig,'landscape')
-print(fig,'-bestfit','displaySimulationPlot','-dpdf','-r0')
+print(fig,'-bestfit',fileName,'-dpdf','-r0')
+fileName = ['SimulationPlot-', fileDate, '.fig'];
+savefig(fileName)
 
 %% Export information
 nodesNumber = ['Number of nodes (layers): ', num2str(nx)];
