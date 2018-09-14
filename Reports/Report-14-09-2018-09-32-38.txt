@@ -1,0 +1,142 @@
+STL file name: Teil3.STL
+-----------------------
+Number of nodes (layers): 25
+Nodes thickness: 0.600 mm
+Powderbed temperature: 163.00 °C
+Chamber temperature: 155.00 °C
+Wave length: 0.0106 mm
+Raw beam radius at focusing lens: 16.00 mm
+Focal length: 120.00 mm
+Distance to focal point: 10.00 mm
+Laser power: 30.00 W
+Laser speed: 1.00 m/s
+Heat flux intensity at the workpiece: 15.57 MW/m^2
+Reflection: NaN, transmission: NaN, absorption: NaN
+---------------------------
+Layer no: 1
+Laser exposure time: 0.150 s
+Maximum temperature: 230.997 °C
+Minimum temperature: 163.000 °C
+---------------------------
+Layer no: 2
+Laser exposure time: 0.150 s
+Maximum temperature: 249.736 °C
+Minimum temperature: 155.000 °C
+---------------------------
+Layer no: 3
+Laser exposure time: 0.138 s
+Maximum temperature: 257.629 °C
+Minimum temperature: 155.000 °C
+---------------------------
+Layer no: 4
+Laser exposure time: 0.126 s
+Maximum temperature: 260.600 °C
+Minimum temperature: 155.000 °C
+---------------------------
+Layer no: 5
+Laser exposure time: 0.138 s
+Maximum temperature: 263.620 °C
+Minimum temperature: 155.000 °C
+---------------------------
+Layer no: 6
+Laser exposure time: 0.150 s
+Maximum temperature: 266.735 °C
+Minimum temperature: 155.000 °C
+---------------------------
+Layer no: 7
+Laser exposure time: 0.150 s
+Maximum temperature: 268.962 °C
+Minimum temperature: 155.000 °C
+---------------------------
+Layer no: 8
+Laser exposure time: 0.150 s
+Maximum temperature: 270.598 °C
+Minimum temperature: 155.000 °C
+---------------------------
+Layer no: 9
+Laser exposure time: 0.150 s
+Maximum temperature: 271.741 °C
+Minimum temperature: 155.000 °C
+---------------------------
+Layer no: 10
+Laser exposure time: 0.199 s
+Maximum temperature: 281.031 °C
+Minimum temperature: 155.000 °C
+---------------------------
+Layer no: 11
+Laser exposure time: 0.227 s
+Maximum temperature: 293.773 °C
+Minimum temperature: 155.000 °C
+---------------------------
+Layer no: 12
+Laser exposure time: 0.242 s
+Maximum temperature: 305.541 °C
+Minimum temperature: 155.000 °C
+---------------------------
+Layer no: 13
+Laser exposure time: 0.249 s
+Maximum temperature: 314.588 °C
+Minimum temperature: 155.000 °C
+---------------------------
+Layer no: 14
+Laser exposure time: 0.247 s
+Maximum temperature: 320.081 °C
+Minimum temperature: 155.000 °C
+---------------------------
+Layer no: 15
+Laser exposure time: 0.236 s
+Maximum temperature: 322.068 °C
+Minimum temperature: 155.000 °C
+---------------------------
+Layer no: 16
+Laser exposure time: 0.214 s
+Maximum temperature: 319.376 °C
+Minimum temperature: 155.000 °C
+---------------------------
+Layer no: 17
+Laser exposure time: 0.177 s
+Maximum temperature: 304.870 °C
+Minimum temperature: 155.000 °C
+---------------------------
+Layer no: 18
+Laser exposure time: 0.150 s
+Maximum temperature: 296.034 °C
+Minimum temperature: 155.000 °C
+---------------------------
+Layer no: 19
+Laser exposure time: 0.150 s
+Maximum temperature: 289.442 °C
+Minimum temperature: 155.000 °C
+---------------------------
+Layer no: 20
+Laser exposure time: 0.150 s
+Maximum temperature: 285.585 °C
+Minimum temperature: 155.000 °C
+---------------------------
+Layer no: 21
+Laser exposure time: 0.150 s
+Maximum temperature: 282.832 °C
+Minimum temperature: 155.000 °C
+---------------------------
+Layer no: 22
+Laser exposure time: 0.150 s
+Maximum temperature: 280.804 °C
+Minimum temperature: 155.000 °C
+---------------------------
+Layer no: 23
+Laser exposure time: 0.150 s
+Maximum temperature: 279.296 °C
+Minimum temperature: 155.000 °C
+---------------------------
+Layer no: 24
+Laser exposure time: 0.150 s
+Maximum temperature: 278.168 °C
+Minimum temperature: 155.000 °C
+---------------------------
+Layer no: 25
+Laser exposure time: 0.150 s
+Maximum temperature: 277.319 °C
+Minimum temperature: 155.000 °C
+---------------------------
+Average laser time per layer: 0.172 s
+Average runtime: 30.991 min

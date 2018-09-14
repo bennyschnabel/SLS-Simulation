@@ -22,6 +22,7 @@ fileID = fopen([savePath fileName],'wt');
 stlName = 'Teil2.STL';
 % Display STL file name in console
 disp(stlName)
+disp('-------------------')
 % Write data to report
 fprintf(fileID, 'STL file name: %s\n', stlName);
 fprintf(fileID, '-----------------------\n');
@@ -60,8 +61,15 @@ fprintf(fileID, 'Chamber temperature: %.2f °C\n', T_chamber-273.15);
 % Create Voxel- Matrix
 [gridOUTPUT] = VOXELISE(nx,ny,nz,stlName,'xyz');
 
-% Rotate Voxel- Matrix along z axis
+% Add 0 to not touch the wall
 
+gridOUTPUT(nx+1:nx+2,:,:) = 0;
+gridOUTPUT(:,nx+1:nx+2,:) = 0;
+gridOUTPUT(:,:,nx+1:nx+2) = 0;
+gridOUTPUT = circshift(gridOUTPUT,[1 1 1]);
+
+
+% Rotate Voxel- Matrix along z axis
 rotateZAxis = '0';
 
 switch rotateZAxis
@@ -76,8 +84,6 @@ switch rotateZAxis
     otherwise 
         disp('')
 end
-        
-%gridOUTPUT = rot90(gridOUTPUT,1);
 
 % Show Voxel plot (show or hide)
 displaySTLPlot = 'hide';
@@ -130,7 +136,7 @@ P = laserParameter.laserPower;
 v = laserParameter.laserSpeed;
 
 % Write data to report
-fprintf(fileID, 'Wave length: %.2f mm\n', lambda * 10^3);
+fprintf(fileID, 'Wave length: %.4f mm\n', lambda * 10^3);
 fprintf(fileID, 'Raw beam radius at focusing lens: %.2f mm\n', r_0 * 10^3);
 fprintf(fileID, 'Focal length: %.2f mm\n', f * 10^3);
 fprintf(fileID, 'Distance to focal point: %.2f mm\n', b * 10^3);
@@ -178,13 +184,26 @@ fprintf(fileID, 'Heat flux intensity at the workpiece: %.2f MW/m^2\n', q_w_max *
 % Write data to report
 fprintf(fileID, 'Reflection: %.2f, transmission: %0.2f, absorption: %0.2f\n', R, T, A);
 
+%% Plot export settings
+
+[szX,szY,szZ] = size(gridOUTPUT);
+
+% Build meshgrid for plot
+[x,y,z] = meshgrid(0:Lx/(szX-1):Lx,0:Lx/(szY-1):Ly,0:Lx/(szZ-1):Lz);
+region = [0,Lx,0,Ly,0,Lz];
+
+numberOfSlices = 7;
+xSliced = linspace(0, Lx, numberOfSlices);
+ySliced = linspace(0, Ly, numberOfSlices);
+zSliced = linspace(0, Lz, numberOfSlices);
+
 %% Heat simulation
 
 % Build IC
-u0 = zeros(nx,ny,nz);
-for i = 1 : nx
-    for j = 1 : ny
-        for k = 1 : nz
+u0 = zeros(szX,szY,szZ);
+for i = 1 : szX
+    for j = 1 : szY
+        for k = 1 : szZ
             u0(i,j,k) = T_powderbed;
         end
     end
@@ -192,8 +211,8 @@ end
 
 % Initial heating
 
-LayerShift = circshift(gridOUTPUT,[0 0 -1]);
-firstLayer = LayerShift(:,:,nz);
+LayerShift = circshift(gridOUTPUT,[0 0 -2]);
+firstLayer = LayerShift(:,:,szZ);
 
 % Laser time per layer
 t_Laser = nodesThickness * sum(firstLayer(:)) / v;
@@ -204,12 +223,14 @@ i = 1;
 layerNumber = ['Layer: ', num2str(i), '; laser exposure time: ', num2str(t_Laser), ' s'];
 disp(layerNumber)
 
-[Temp, maxT] = computateHeatEquation3D(t_Laser, q_w_max, u0, T_chamber, T_powderbed, ...
-    firstLayer, LayerShift, nodesThickness, Lx, Ly, Lz, nx, ny, nz);
+[Temp, maxT, minT] = computateHeatEquation3D(t_Laser, q_w_max, u0, T_chamber, T_powderbed, ...
+    firstLayer, LayerShift, nodesThickness, Lx, Ly, Lz, szX, szY, szZ);
 
 % Display layer and temperature information
-layerNumberTemperature = ['Layer: ', num2str(i), '; maximum temperature: ', num2str(maxT-273.15), ' °C'];
-disp(layerNumberTemperature)
+layerNumberMaxTemperature = ['Layer: ', num2str(i), '; maximum temperature: ', num2str(maxT-273.15), ' °C'];
+disp(layerNumberMaxTemperature)
+layerNumberMinTemperature = ['Layer: ', num2str(i), '; minimum temperature: ', num2str(minT-273.15), ' °C'];
+disp(layerNumberMinTemperature)
 disp('-------------------')
 
 % Write data to report
@@ -217,19 +238,39 @@ fprintf(fileID, '---------------------------\n');
 fprintf(fileID, 'Layer no: %d\n', i);
 fprintf(fileID, 'Laser exposure time: %0.3f s\n', t_Laser);
 fprintf(fileID, 'Maximum temperature: %0.3f °C\n', maxT-273.15);
+fprintf(fileID, 'Minimum temperature: %0.3f °C\n', minT-273.15);
+
+% Export plot of layer
+
+fin = LayerShift .* Temp;
+
+fig = figure();
+fin(fin == 0) = NaN;
+h = slice(x,y,z,fin-273.15,xSliced,ySliced,Inf);
+axis(region);
+set(h,'edgecolor','none')
+set(gca,'xtick',[])
+set(gca,'ytick',[])
+set(gca,'ztick',[])
+xlabel('x')
+ylabel('y')
+zlabel('z')
+cb = colorbar;
+ylabel(cb, '°C')
+fileName = [savePath, 'SimulationPlotLayer-', num2str(i), '-', fileDate];
+orient(fig,'landscape')
+print(fig,'-bestfit',fileName,'-dpdf','-r0')
 
 while i < nx
     i = i + 1;
     
     % Cooling while moving down
-    %{
-    [Temp, maxT,j] = computateHeatEquation3D(1*10^-10, 0, Temp, T_chamber, T_powderbed, ...
-        firstLayer, LayerShift, Lx, Ly, Lz, nx, ny, nz);
-    %}
-    
+    [Temp, ~, ~] = computateHeatEquation3D(0.01, 0, Temp, T_chamber, T_powderbed, ...
+        firstLayer, LayerShift, nodesThickness, Lx, Ly, Lz, szX, szY, szZ);
+
     % Moving down
     LayerShift = circshift(LayerShift,[0 0 -1]);
-    firstLayer = LayerShift(:,:,nz);
+    firstLayer = LayerShift(:,:,szZ);
     
     % Laser time per layer
     t_Laser = nodesThickness * sum(firstLayer(:)) / v;
@@ -240,12 +281,14 @@ while i < nx
     disp(layerNumber)
 
     % Heating
-    [Temp, maxT] = computateHeatEquation3D(t_Laser, q_w_max, Temp, T_chamber, T_powderbed, ...
-        firstLayer, LayerShift, nodesThickness, Lx, Ly, Lz, nx, ny, nz);
+    [Temp, maxT, minT] = computateHeatEquation3D(t_Laser, q_w_max, Temp, T_chamber, T_powderbed, ...
+        firstLayer, LayerShift, nodesThickness, Lx, Ly, Lz, szX, szY, szZ);
     
     % Display layer and temperature information
-    layerNumberTemperature = ['Layer: ', num2str(i), '; maximum temperature : ', num2str(maxT-273.15), ' °C'];
-    disp(layerNumberTemperature)
+    layerNumberMaxTemperature = ['Layer: ', num2str(i), '; maximum temperature : ', num2str(maxT-273.15), ' °C'];
+    disp(layerNumberMaxTemperature)
+    layerNumberMinTemperature = ['Layer: ', num2str(i), '; minimum temperature: ', num2str(minT-273.15), ' °C'];
+    disp(layerNumberMinTemperature)
     disp('-------------------')
     
     % Write data to report
@@ -253,21 +296,36 @@ while i < nx
     fprintf(fileID, 'Layer no: %d\n', i);
     fprintf(fileID, 'Laser exposure time: %0.3f s\n', t_Laser);
     fprintf(fileID, 'Maximum temperature: %0.3f °C\n', maxT-273.15);
+    fprintf(fileID, 'Minimum temperature: %0.3f °C\n', minT-273.15);
+    
+    % Export plot of layer
+
+    fin = LayerShift .* Temp;
+
+    fig = figure();
+    fin(fin == 0) = NaN;
+    h = slice(x,y,z,fin-273.15,xSliced,ySliced,Inf);
+    axis(region);
+    set(h,'edgecolor','none')
+    set(gca,'xtick',[])
+    set(gca,'ytick',[])
+    set(gca,'ztick',[])
+    xlabel('x')
+    ylabel('y')
+    zlabel('z')
+    cb = colorbar;
+    ylabel(cb, '°C')
+    fileName = [savePath, 'SimulationPlotLayer-', num2str(i), '-', fileDate];
+    orient(fig,'landscape')
+    print(fig,'-bestfit',fileName,'-dpdf','-r0')
 end
 
-% Build meshgrid for plot
-[x,y,z] = meshgrid(0:dx:Lx,0:dy:Ly,0:dz:Lz);
-region = [0,Lx,0,Ly,0,Lz];
+% Export plot
 
-fin = gridOUTPUT .* Temp;
+fin = circshift(gridOUTPUT,[0 0 -2]) .* Temp;
 
 fig = figure();
 fin(fin == 0) = NaN;
-numberOfSlices = 7;
-xSliced = linspace(0, Lx, numberOfSlices);
-ySliced = linspace(0, Ly, numberOfSlices);
-zSliced = linspace(0, Lz, numberOfSlices);
-%h = slice(x,y,z,fin-273.15,Lx/2,Ly/2,Lz/2);
 h = slice(x,y,z,fin-273.15,xSliced,ySliced,Inf);
 axis(region);
 set(h,'edgecolor','none')

@@ -1,4 +1,4 @@
-function [T,maxT] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed, layer, layerShift, layerThickness, Lx, Ly, Lz, nx, ny, nz)
+function [T,maxT, minT] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed, layer, layerShift, layerThickness, Lx, Ly, Lz, nx, ny, nz)
     % [T,maxT] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed)
     %
     % Bachelor thesis equation number: ()
@@ -11,7 +11,7 @@ function [T,maxT] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed, layer
     % Get thermal parameters
     %thermalParameter = getThermalParameter();
     
-    a = computateThermalDiffusivity(184.3) * 10^6;
+    a = computateThermalDiffusivity(184.3) * 10^3;
     dx = Lx/(nx-1);
     dy = Ly/(ny-1);
     dz = Lz/(nz-1);
@@ -23,7 +23,8 @@ function [T,maxT] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed, layer
     c_p = computateHeatCapacity(184.3);
     
     % Build Numerical Mesh
-    [x,y,z] = meshgrid(0:dx:Lx,0:dy:Ly,0:dz:Lz);
+    [szX,szY] = size(layer);
+    [x,y,z] = meshgrid(0:Lx/(szX-1):Lx,0:Lx/(szY-1):Ly,0:Lx/(szY-1):Lz);
 
     % Set Initial time step
     dt0 = 1/(2*a*(1/dx^2+1/dy^2+1/dz^2)); % stability condition
@@ -37,12 +38,13 @@ function [T,maxT] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed, layer
     %% Solver Loop 
     % load initial conditions
     t=dt0; it=0; u=u0; dt=dt0;
-    
-    q = zeros(nx,ny,nz);
-    q(:,:,nz-1) = layer;
-    q(:,:,nz-1) = q(:,:,nz-1) * (q_w/layerThickness);
+
+    q = zeros(szX,szY,szY);
+    q(:,:,szX-1) = layer;
+    q(:,:,szX-1) = q(:,:,szX-1) * (q_w/layerThickness);
     
     maxT = 0;
+    minT = 1 * 10^5;
     
     iter = tFinal / dt0;
     iterA = iter / nx;
@@ -57,21 +59,21 @@ function [T,maxT] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed, layer
     while t < tFinal
         % RK stages
         uo=u;
-        u = finiteDifferenceMethod3D(uo,nx,ny,nz,Dx,Dy,Dz,dt,q,rho,c_p);
+        u = finiteDifferenceMethod3D(uo,szX,szX,szX,Dx,Dy,Dz,dt,q,rho,c_p);
         T = u;
         
         % set BCs
         u(1,:,:) = T_bed;
         u(:,1,:) = T_bed;
         u(:,:,1) = T_bed;
-        u(nx,:,:) = T_bed ;
-        u(:,ny,:) = T_bed ;
-         
-         if q_w == 0
-             u(:,:,nz) = T_air;
-         else
-             u(:,:,nz) = uo(:,:,nz-1);
-         end
+        u(szX,:,:) = T_bed ;
+        u(:,szX,:) = T_bed ;
+        
+        if q_w == 0
+            u(:,:,szX) = T_air;
+        else
+            u(:,:,szX) = uo(:,:,szX-1);
+        end
          
          % compute time step
          if t + dt > tFinal
@@ -84,11 +86,19 @@ function [T,maxT] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed, layer
          heatedLayer = layerShift .* T;
          heatedLayer(heatedLayer == 0) = NaN;
          
-         if maxT < max(max(heatedLayer(:,:,nz)))
-             maxT = max(max(heatedLayer(:,:,nz)));
+         if maxT < max(max(heatedLayer(:,:,szX)))
+             maxT = max(max(heatedLayer(:,:,szX)));
          else
              maxT = maxT;
          end
+         
+         %{
+         if minT > min(min(heatedLayer(:,:,szX)))
+             minT = min(min(heatedLayer(:,:,szX)));
+         else
+             minT = minT;
+         end
+         %}
          
          % Real-time plot
          displayLivePlot='hide';
@@ -112,4 +122,10 @@ function [T,maxT] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed, layer
              otherwise
                  disp('')
          end
+    end
+    
+    if minT > min(min(heatedLayer(:,:,szX)))
+        minT = min(min(heatedLayer(:,:,szX)));
+    else
+        minT = minT;
     end

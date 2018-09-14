@@ -1,0 +1,19 @@
+STL file name: Teil2.STL
+-----------------------
+Number of nodes (layers): 25
+Nodes thickness: 0.400 mm
+Powderbed temperature: 163.00 °C
+Chamber temperature: 155.00 °C
+Wave length: 0.0106 mm
+Raw beam radius at focusing lens: 16.00 mm
+Focal length: 120.00 mm
+Distance to focal point: 10.00 mm
+Laser power: 30.00 W
+Laser speed: 1.00 m/s
+Heat flux intensity at the workpiece: 15.57 MW/m^2
+Reflection: 0.05, transmission: 0.01, absorption: 0.44
+---------------------------
+Layer no: 1
+Laser exposure time: 0.031 s
+Maximum temperature: 162.639 °C
+Minimum temperature: 29.932 °C

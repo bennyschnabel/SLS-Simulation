@@ -1,0 +1,6 @@
+STL file name: Teil1.STL
+-----------------------
+Number of nodes (layers): 25
+Nodes thickness: 0.600 mm
+Powderbed temperature: 163.00 °C
+Chamber temperature: 155.00 °C

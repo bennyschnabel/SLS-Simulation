@@ -4,7 +4,7 @@
 %
 
 function parameter = getThermalParameter()
-    a = 25;
+    a = 30;
     % Number of nodes in x direction
     parameter.numberOfNodesInX = a;
     % Number of nodes in y direction
