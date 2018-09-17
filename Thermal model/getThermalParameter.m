@@ -4,7 +4,7 @@
 %
 
 function parameter = getThermalParameter()
-    a = 30;
+    a = 50;
     % Number of nodes in x direction
     parameter.numberOfNodesInX = a;
     % Number of nodes in y direction
@@ -30,4 +30,7 @@ function parameter = getThermalParameter()
     parameter.speedOfLight = 299792458;
     % Planck constant [Js]
     parameter.planckConstant = 6.62606896 * 10^-34;
+    
+    % Cooling time [s]
+    parameter.coolingtime = 0.01;
 end

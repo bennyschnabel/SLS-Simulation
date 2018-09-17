@@ -50,11 +50,14 @@ nodesThickness = maxLengthOfSTLModel / nx;
 T_powderbed = thermalParameter.powderbedTemperature;
 T_chamber = thermalParameter.chamberTemperature;
 
+t_cooling = thermalParameter.coolingtime;
+
 % Write data to report
 fprintf(fileID, 'Number of nodes (layers): %d\n', nx);
 fprintf(fileID, 'Nodes thickness: %0.3f mm\n', nodesThickness*10^3);
 fprintf(fileID, 'Powderbed temperature: %.2f °C\n', T_powderbed-273.15);
 fprintf(fileID, 'Chamber temperature: %.2f °C\n', T_chamber-273.15);
+fprintf(fileID, 'Cooling time per layer: %0.3f s\n', t_cooling);
 
 %% STL model
 
@@ -199,7 +202,8 @@ zSliced = linspace(0, Lz, numberOfSlices);
 
 %% Heat simulation
 
-% Build IC
+%% Build initial condition
+
 u0 = zeros(szX,szY,szZ);
 for i = 1 : szX
     for j = 1 : szY
@@ -209,7 +213,7 @@ for i = 1 : szX
     end
 end
 
-% Initial heating
+%% Initial heating of first layer
 
 LayerShift = circshift(gridOUTPUT,[0 0 -2]);
 firstLayer = LayerShift(:,:,szZ);
@@ -243,29 +247,15 @@ fprintf(fileID, 'Minimum temperature: %0.3f °C\n', minT-273.15);
 % Export plot of layer
 
 fin = LayerShift .* Temp;
+[plot] = plotSimulation(fin, x, y, z, xSliced, ySliced, zSliced, region, savePath, fileDate, i);
 
-fig = figure();
-fin(fin == 0) = NaN;
-h = slice(x,y,z,fin-273.15,xSliced,ySliced,Inf);
-axis(region);
-set(h,'edgecolor','none')
-set(gca,'xtick',[])
-set(gca,'ytick',[])
-set(gca,'ztick',[])
-xlabel('x')
-ylabel('y')
-zlabel('z')
-cb = colorbar;
-ylabel(cb, '°C')
-fileName = [savePath, 'SimulationPlotLayer-', num2str(i), '-', fileDate];
-orient(fig,'landscape')
-print(fig,'-bestfit',fileName,'-dpdf','-r0')
+%% Loop to simulate the rest of the layers
 
 while i < nx
     i = i + 1;
     
     % Cooling while moving down
-    [Temp, ~, ~] = computateHeatEquation3D(0.01, 0, Temp, T_chamber, T_powderbed, ...
+    [Temp, ~, ~] = computateHeatEquation3D(t_cooling, 0, Temp, T_chamber, T_powderbed, ...
         firstLayer, LayerShift, nodesThickness, Lx, Ly, Lz, szX, szY, szZ);
 
     % Moving down
@@ -299,47 +289,14 @@ while i < nx
     fprintf(fileID, 'Minimum temperature: %0.3f °C\n', minT-273.15);
     
     % Export plot of layer
-
     fin = LayerShift .* Temp;
-
-    fig = figure();
-    fin(fin == 0) = NaN;
-    h = slice(x,y,z,fin-273.15,xSliced,ySliced,Inf);
-    axis(region);
-    set(h,'edgecolor','none')
-    set(gca,'xtick',[])
-    set(gca,'ytick',[])
-    set(gca,'ztick',[])
-    xlabel('x')
-    ylabel('y')
-    zlabel('z')
-    cb = colorbar;
-    ylabel(cb, '°C')
-    fileName = [savePath, 'SimulationPlotLayer-', num2str(i), '-', fileDate];
-    orient(fig,'landscape')
-    print(fig,'-bestfit',fileName,'-dpdf','-r0')
+    [plot] = plotSimulation(fin, x, y, z, xSliced, ySliced, zSliced, region, savePath, fileDate, i);
 end
 
-% Export plot
+%% Export completed simulation as plot
 
 fin = circshift(gridOUTPUT,[0 0 -2]) .* Temp;
-
-fig = figure();
-fin(fin == 0) = NaN;
-h = slice(x,y,z,fin-273.15,xSliced,ySliced,Inf);
-axis(region);
-set(h,'edgecolor','none')
-set(gca,'xtick',[])
-set(gca,'ytick',[])
-set(gca,'ztick',[])
-xlabel('x')
-ylabel('y')
-zlabel('z')
-cb = colorbar;
-ylabel(cb, '°C')
-fileName = ['SimulationPlot-', fileDate];
-orient(fig,'landscape')
-print(fig,'-bestfit',fileName,'-dpdf','-r0')
+[plot] = plotSimulation(fin, x, y, z, xSliced, ySliced, zSliced, region, savePath, fileDate, i);
 fileName = ['SimulationPlot-', fileDate, '.fig'];
 savefig(fileName)
 
