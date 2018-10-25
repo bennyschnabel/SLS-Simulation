@@ -8,4 +8,4 @@ function [a] = computateThermalDiffusivity(theta)
     % The thermal diffusivity has the unit m^2 / s.
     %
     
-    a = computateHeatConductivity(theta) ./ (computateDensity(theta) * computateHeatCapacity(theta)); 
+    a = computateHeatConductivity(theta) ./ (computateDensity(theta) .* computateHeatCapacity(theta)); 

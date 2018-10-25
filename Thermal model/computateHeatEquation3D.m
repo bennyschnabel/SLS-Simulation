@@ -1,5 +1,5 @@
-function [T,maxT, minT] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed, layer, layerShift, layerThickness, Lx, Ly, Lz, nx, ny, nz)
-    % [T,maxT] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed)
+function [T,maxT, minT] = computateHeatEquation3D(tFinal, q_w, u0, T_chamber, T_bed, layer, layerShift, layerThickness, Lx, Ly, Lz, nx, ny, nz)
+    % [T,maxT, minT] = computateHeatEquation3D(tFinal, q_w, u0, T_chamber, T_bed, layer, layerShift, layerThickness, Lx, Ly, Lz, nx, ny, nz)
     %
     % Bachelor thesis equation number: ()
     % 
@@ -12,27 +12,28 @@ function [T,maxT, minT] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed,
     %thermalParameter = getThermalParameter();
     
     a = computateThermalDiffusivity(184.3) * 10^3;
-    dx = Lx/(nx-1);
-    dy = Ly/(ny-1);
-    dz = Lz/(nz-1);
-    Dx = a/dx^2;
-    Dy = a/dy^2;
-    Dz = a/dz^2;
+    hx = Lx/(nx-1);
+    hy = Ly/(ny-1);
+    hz = Lz/(nz-1);
+    Dx = a/hx^2;
+    Dy = a/hy^2;
+    Dz = a/hz^2;
     
     rho =  computateDensity(184.3);
     c_p = computateHeatCapacity(184.3);
     
-    % Build Numerical Mesh
+    % Build numerical mesh for plot
     [szX,szY] = size(layer);
     [x,y,z] = meshgrid(0:Lx/(szX-1):Lx,0:Lx/(szY-1):Ly,0:Lx/(szY-1):Lz);
 
     % Set Initial time step
-    dt0 = 1/(2*a*(1/dx^2+1/dy^2+1/dz^2)); % stability condition
+    dt0 = 1/(2*a*(1/hx^2+1/hy^2+1/hz^2)); % stability condition
     
     if dt0 > 1 * 10^-3
         dt0 = 1 * 10^-5;
     else
         dt0 = dt0;
+        disp('Caution: System is not stable!!')
     end
     
     %% Solver Loop 
@@ -70,7 +71,7 @@ function [T,maxT, minT] = computateHeatEquation3D(tFinal, q_w, u0, T_air, T_bed,
         u(:,szX,:) = T_bed ;
         
         if q_w == 0
-            u(:,:,szX) = T_air;
+            u(:,:,szX) = T_chamber;
         else
             u(:,:,szX) = uo(:,:,szX-1);
         end

@@ -13,6 +13,7 @@ function [fig] = plotLaserFunctions(x,y,q,axisscale,labelName,datatype)
     %axis([-axisscale axisscale -axisscale axisscale])
     %view(0,0)
     grid on
+    axis tight
     cb = colorbar;
     ylabel(cb, 'MW/m^2')
     set(gca,'fontsize',12)

@@ -4,25 +4,14 @@
 %
 
 function parameter = getThermalParameter()
-    a = 50;
-    % Number of nodes in x direction
-    parameter.numberOfNodesInX = a;
-    % Number of nodes in y direction
-    parameter.numberOfNodesInY = a;
-    % Number of nodes in z direction
-    parameter.numberOfNodesInZ = a;
-    % Length of domain in x direction [m]
-    %parameter.lengthOfDomainInX = 0.1;
-    % Length of domain in y direction [m]
-    %parameter.lengthOfDomainInY = 0.1;
-    % Length of domain in z direction [m]
-    %parameter.lengthOfDomainInZ = 0.1;
-    % Layer thickness [m]
-    parameter.layerThickness = 2 * 10^-4;
+    % Number of nodes
+    parameter.numberOfNodes = 5;
     % Chamber temperature [K]
-    parameter.chamberTemperature = 273.15+155.0;
+    parameter.chamberTemperature = 273.15 + 175.0;
     % Powderbed temperature [K]
-    parameter.powderbedTemperature = 273.15+163.0;
+    parameter.powderbedTemperature = 273.15 + 163.0;
+    % [Temperature based on paper!!!]
+    %parameter.powderbedTemperature = 273.15 + 140.0;
     
     % Boltzmann constant [J/K]
     parameter.boltzmannConstant = 1.3806504 * 10^-23;

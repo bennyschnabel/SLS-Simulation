@@ -1,10 +1,10 @@
-a=gridOUTPUT;
+a=voxelMatrix;
 i = 1;
 fig = figure();
 hold on;
 
 writerObj = VideoWriter('out4.avi'); % Name it.
-writerObj.FrameRate = 8; % How many frames per second.
+writerObj.FrameRate = 4; % How many frames per second.
 open(writerObj); 
 
 while i <= nx

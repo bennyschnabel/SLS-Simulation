@@ -12,10 +12,10 @@ function parameter = getLaserParameter()
     parameter.waveLength = 10.63;
     % Laser power [W]
     parameter.laserPower = 30.0;
-    % Raw beam radius at focusing lens [mm]
+    % Raw beam radius at focusing lens [mm] viel zu groﬂ
     parameter.rawBeamRadius = 16.0;
     % Distance to focal point [mm]
     parameter.distanceFocalPoint  = 10.0;
     % Laser Speed [m/s]
-    parameter.laserSpeed = 1.0;%0.1;
+    parameter.laserSpeed = 3.0;%0.1;
 end
