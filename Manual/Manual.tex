@@ -109,7 +109,7 @@
 \usepackage{transparent}
 \usepackage{float}
 
-\title{Quick start Guide}
+\title{Manual}
 \author{Benjamin Schnabel}
 \date{\today}
 
@@ -120,7 +120,7 @@
 
 \section{Verzeichnisstruktur}
 
-In Abbildung \ref{fig:verzeichnisstruktur} ist eine Übersicht über die Verzeichnisstruktur des Modells zur Simulation der thermischen Eigenschaften beim Selektiven Lasersintern dargestellt. Dabei sind nur die wichtigsten Dateien aufgeführt und kurz erklärt.
+In Abbildung \ref{fig:verzeichnisstruktur} ist eine Übersicht über die Verzeichnisstruktur des Modells zur Simulation der thermischen Eigenschaften beim Selektiven Lasersintern dargestellt. Im Folgenden werden nur die für die Durchführung der Simulation wichtigsten Funktionen erklärt.
 
 \begin{figure}
 \begin{forest}
@@ -152,7 +152,7 @@ for tree={
 
 \section{Schnellstart}\label{sec:schnellstart}
 
-Für den Schnellstart der Simulation wird die STL-Datei im Ordner \textit{STL file} abgelegt. Im Anschluss wird die Matlab-Datei \textit{main.m} geöffnet. In Abbildung \ref{fig:1} ist der Auswahldialog der STL-Datei dargestellt. In diesem wird einfach die zuvor abgelegte Datei ausgewählt. Im nächsten Schritt werden noch die wichtigsten Simulationsparameter abgefragt. Dies ist in Abbildung \ref{fig:2} dargestellt.
+Für den Schnellstart der Simulation wird die STL-Datei im Ordner \textit{STL file} abgelegt. Im Anschluss wird die Matlab-Datei \textit{main.m} geöffnet und über den Befehl \textit{Run main} bzw. über die Taste \textit{F5} gestartet. In Abbildung \ref{fig:1} ist der Auswahldialog der STL-Datei dargestellt. In diesem wird einfach die zuvor abgelegte Datei ausgewählt. Im nächsten Schritt werden noch die wichtigsten Simulationsparameter abgefragt. Dies ist in Abbildung \ref{fig:2} dargestellt. 
 
 \begin{figure}
 \centering
@@ -173,11 +173,11 @@ Für den Schnellstart der Simulation wird die STL-Datei im Ordner \textit{STL fi
 
 \section{Laser model}\label{sec:laserModel}
 
-Definition der Laserparameter.
+In diesem Ordner sind alle Funktionen zur Beschreibung der Wärmestromdichte eines Gauß-Laserstrahls für eine TEM$_{00}$-Mode abgelegt.
 
 \subsection{getLaserParameter}\label{subsec:getLaserParameter}
 
-Hier werden die Laserleistung und die Scangeschwindigkeit festgelegt.
+In dieser Funktionen können die Parameter zur Beschreibung des Lasers vordefiniert werden. Alle in Abbildung \ref{fig:2} definierten Parameter werden aus dieser Funktion ausgelesen. 
 
 \begin{lstlisting}
 function parameter = getLaserParameter()
@@ -200,7 +200,7 @@ end
 
 \section{Material model}\label{sec:materialModel}
 
-Definition der Werkstoffparameter.
+In diesem Ordner sind alle Funktionen zur Beschreibung der Eigenschaften des Werkstoffes abgelegt. Dies beinhaltet die spezifische Wärmekapazität $ c_{p} $, Wärmeleitfähigkeit $ \kappa $, Dichte $ \rho $ und Temperaturleitfähigkeit $ a $.
 
 \section{Reports}\label{sec:reports}
 
@@ -208,13 +208,15 @@ Nach jeder Simulation werden die erstellten Berichte in diesem Ordner automatisc
 
 \section{STL file}\label{sec:stlFile}
 
-Die erstellen STL-Dateien werden hier abgelegt.
+Die erstellen STL-Dateien werden in diesem Ordner abgelegt.
 
 \section{Thermal model}\label{sec:thermalModel}
 
-Definition der thermischen Parameter.
+In diesem Ordner ist die Funktion zur Berechung der Wärmeübertragung, die Implementierung des Explizites Euler-Verfahrens und die Funktion zum Vordefinieren der thermischen Parameter abgelegt.
 
 \subsection{getThermalParameter}\label{subsec:getThermalParameter}
+
+In dieser Funktionen können die Parameter zur Beschreibung des thermischen Eingenschaften vordefiniert werden. Die Anzahl der Gitterpunkte und die Abkühlungszeit pro Schicht (siehe Abbildung \ref{fig:2}) werden aus dieser Funktion ausgelesen. 
 
 \begin{lstlisting}
 function parameter = getThermalParameter()
@@ -241,11 +243,84 @@ end
 
 \subsection{plotSimulation}\label{subsec:plotSimulation}
 
-\section{main}\label{sec:main}
+Die Transparenz kann über den Befehl \textit{alpha(h,0.2)} angepasst werden, wobei der Wert nach dem \textit{h} die Transparenz bestimmt.
 
 \begin{lstlisting}
-stlName = 'Teil2.STL';
+function [fig] = plotSimulation(fin,x,y,z,xSliced,ySliced, ...)
+    fig = figure(1);
+    fin(fin == 0) = NaN;
+    h = slice(x,y,z,fin-273.15,xSliced,ySliced,Inf);
+    axis(region);
+    set(h,'EdgeColor','none')
+    set(gca,'xtick',[])
+    set(gca,'ytick',[])
+    set(gca,'ztick',[])
+    xlabel('x')
+    ylabel('y')
+    zlabel('z')
+    cb = colorbar;
+    ylabel(cb, '°C')
+    alpha(h,0.2);
+    stlName = stlName(1:end-4);
+    fileName = [stlName, '-Layer', num2str(i)];
+    orient(fig,'landscape')
+    print(fig,'-bestfit',fileName,'-dpdf','-r0')
+\end{lstlisting}
+
+\section{main.m}\label{sec:main}
+
+Main-Funktion zur Ausführung der Simulation. Im Folgenden wird nur die Drehung des Voxel-Modells entlang der $ z $-Achse erklärt.
+
+Über die Zuweisung eines Wertes zur Variablen \textit{rotateZAxis} kann das Voxel-Modell entlang seiner $ z $-Achse um $ 90 $, $ 180 $ und $ 270 $ Grad gedreht werden.
+
+\begin{lstlisting}
+% Rotate Voxel- Matrix along z axis
 rotateZAxis = '0';
+
+switch rotateZAxis
+    case '0'
+        voxelMatrix = rot90(voxelMatrix,0);
+    case '90'
+        voxelMatrix = rot90(voxelMatrix,1);
+    case '180'
+        voxelMatrix = rot90(voxelMatrix,3);
+    case '270'
+        voxelMatrix = rot90(voxelMatrix,2);
+    otherwise 
+        disp('')
+end
+
+% Show Voxel plot (show or hide)
+displaySTLPlot = 'hide';
+
+switch displaySTLPlot
+    case 'show'
+        disp('')
+        fig = figure();
+        [vol_handle] = VoxelPlotter(voxelMatrix,1);
+        alpha(0.8)
+        az = -37;
+        el = 30;
+        view(az, el);
+        set(gca,'xlim',[0 nx+1], 'ylim',[0 ny+1], 'zlim',[0 nz+1])
+        xlabel('Nodes in x')
+        ylabel('Nodes in y')
+        zlabel('Nodes in z')
+        
+        exportSTLPlot = 'false';
+        
+        switch exportSTLPlot
+            case 'true'
+                orient(fig,'landscape')
+                print(fig,'-bestfit','displaySTLPlot','-dpdf','-r0')
+            case 'false'
+                disp('')
+        end
+    case 'hide'
+        disp('')
+    otherwise
+        disp('')     
+end
 \end{lstlisting}
 
 \section{Ablauf Simulation}
