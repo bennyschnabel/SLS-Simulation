@@ -1,7 +1,7 @@
 function [rho] = computateDensity(theta)
     % [rho] = computateDensity(theta)
     %
-    % Bachelor thesis equation number: ()
+    % Bachelor thesis equation number: (2.3)
     % 
     % Calculation of the density for PA 2200. 
     % The input temperature must be specified in degrees Celsius.
@@ -18,4 +18,4 @@ function [rho] = computateDensity(theta)
     else
         rho = NaN;
     end
-    
+end

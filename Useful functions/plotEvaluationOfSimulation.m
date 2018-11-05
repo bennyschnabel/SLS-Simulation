@@ -1,4 +1,4 @@
-function [fig] = plotEvaluationOfSimulation(fileName, stlName, fileDate)
+function [fig] = plotEvaluationOfSimulation(fileName, stlFileName, fileDate)
     % [fig] = plotSimulation(fin, x, y, z, xSliced, ySliced, zSliced, region, savePath, fileDate, i)
     % 
     % Plotting the simulation
@@ -7,16 +7,16 @@ function [fig] = plotEvaluationOfSimulation(fileName, stlName, fileDate)
     set(groot, 'defaultAxesTickLabelInterpreter','tex');
     set(groot, 'defaultLegendInterpreter','tex');
     set(groot,'defaultTextInterpreter','tex');
-    %fileName = 'Teil2-2018-09-18-09-55-11';
+    
     fileType = '.xlsx';
     file = [fileName, fileType];
-    A = xlsread(file);
-    layerNo = A(:,1);
-    laserTime = A(:,2);
-    maxTemp = A(:,3);
-    minTemp = A(:,4);
+    excelEvaluationMatrix = xlsread(file);
+    layerNo = excelEvaluationMatrix(:,1);
+    laserTime = excelEvaluationMatrix(:,2);
+    maxTemp = excelEvaluationMatrix(:,3);
+    minTemp = excelEvaluationMatrix(:,4);
 
-    fig = figure;
+    fig = figure();
     left_color = [0 0 0];
     right_color = [0 0 0];
     set(fig,'defaultAxesColorOrder',[left_color; right_color]);
@@ -35,6 +35,6 @@ function [fig] = plotEvaluationOfSimulation(fileName, stlName, fileDate)
     hold off;
     axis tight;
 
-    fileName = [fileDate, '-', stlName, '-Evaluation'];
+    fileName = [fileDate, '-', stlFileName, '-Evaluation'];
     orient(fig,'landscape')
     print(fig,'-bestfit',fileName,'-dpdf','-r0')

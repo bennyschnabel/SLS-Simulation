@@ -109,7 +109,7 @@
 \usepackage{transparent}
 \usepackage{float}
 
-\title{Manual}
+\title{Handbuch}
 \author{Benjamin Schnabel}
 \date{\today}
 
@@ -122,7 +122,7 @@
 
 In Abbildung \ref{fig:verzeichnisstruktur} ist eine Übersicht über die Verzeichnisstruktur des Modells zur Simulation der thermischen Eigenschaften beim Selektiven Lasersintern dargestellt. Im Folgenden werden nur die für die Durchführung der Simulation wichtigsten Funktionen erklärt.
 
-\begin{figure}
+\begin{figure}[H]
 \begin{forest}
 pic dir tree,
 pic root,
@@ -133,8 +133,9 @@ for tree={
 [{\hyperref[sec:laserModel]{Laser model}}
 [{\hyperref[subsec:getLaserParameter]{getLaserParameter.m}}, file]
 ]
-[Latex]
+[{\hyperref[sec:latex]{Latex}}]
 [{\hyperref[sec:materialModel]{Material model}}]
+[{\hyperref[sec:plots]{Plots}}]
 [{\hyperref[sec:reports]{Reports}}]
 [{\hyperref[sec:stlFile]{STL file}}]
 [{\hyperref[sec:thermalModel]{Thermal model}}
@@ -154,7 +155,7 @@ for tree={
 
 Für den Schnellstart der Simulation wird die STL-Datei im Ordner \textit{STL file} abgelegt. Im Anschluss wird die Matlab-Datei \textit{main.m} geöffnet und über den Befehl \textit{Run main} bzw. über die Taste \textit{F5} gestartet. In Abbildung \ref{fig:1} ist der Auswahldialog der STL-Datei dargestellt. In diesem wird einfach die zuvor abgelegte Datei ausgewählt. Im nächsten Schritt werden noch die wichtigsten Simulationsparameter abgefragt. Dies ist in Abbildung \ref{fig:2} dargestellt. 
 
-\begin{figure}
+\begin{figure}[H]
 \centering
 \begin{subfigure}[t]{0.4\textwidth}
 \centering
@@ -168,8 +169,112 @@ Für den Schnellstart der Simulation wird die STL-Datei im Ordner \textit{STL fi
 \caption{Parametereingabe}
 \label{fig:2}
 \end{subfigure}
-\caption{Blabka}
+\caption{Eingabefenster}
 \end{figure}
+
+\section{main.m}\label{sec:main}
+
+Main-Funktion zur Ausführung der Simulation. Im Folgenden werden nur die Module (Funktionen) beschrieben, die eine Auswahlmöglichkeit bieten.
+
+\subsection{Wärmestromdichte grafisch darstellen}
+
+Erstellte Datei wird im Ordner {\hyperref[sec:plots]{Plots}} abgelegt.
+
+\begin{lstlisting}
+% Display the heat flux intensity in a figure (true or false)
+displayHeatFluxIntensityFigure = 'false';
+switch displayHeatFluxIntensityFigure
+    case 'true'
+        % exportAsPDF (true or false)
+        plotHeatFluxIntensity(0.02, 'false', P, r_0, r_w);
+    case 'false'
+    otherwise
+        disp('Error: displayHeatFluxIntensityFigure')
+end
+\end{lstlisting}
+
+\subsection{Drehung des Voxel-Modells}
+
+\begin{lstlisting}
+% Rotate Voxel- Matrix along z axis
+rotateZAxis = '0';
+
+switch rotateZAxis
+    case '0'
+        voxelModel = rot90(voxelModel,0);
+    case '90'
+        voxelModel = rot90(voxelModel,1);
+    case '180'
+        voxelModel = rot90(voxelModel,3);
+    case '270'
+        voxelModel = rot90(voxelModel,2);
+    otherwise 
+        disp('Error: rotateZAxis')
+end
+\end{lstlisting}
+
+\subsection{Voxel-Modell grafisch darstellen}
+
+Erstellte Datei wird im Ordner {\hyperref[sec:plots]{Plots}} abgelegt.
+
+\begin{lstlisting}
+% Display the voxel model in a figure (true or false)
+displayVoxelModelFigure = 'false';
+switch displayVoxelModelFigure
+    case 'true'
+        % exportAsPDF (true or false)
+        plotVoxelModel(voxelModel, n, 'false');
+    case 'false'
+    otherwise
+        disp('Error: displayVoxelModelFigure')
+end
+\end{lstlisting}
+
+\subsection{Video der Simulation erstellen}
+
+\begin{lstlisting}
+% Create a movie plot (true or false)
+createVideoPlot = 'false';
+switch createVideoPlot
+    case 'true'
+        plotSimulationForVideoExport(TemperatureArray, ...
+            n, n_new, x, y, z, xSliced, ySliced, region, ...
+            stlFileNameShortened, fileDate);
+    case 'false'
+    otherwise
+        disp('Error: createVideoPlot')
+end
+\end{lstlisting}
+
+\subsection{Eigenwerte der Temperaturmatrix bestimmen}
+
+\begin{lstlisting}
+% Create a plot of the eigenvalues (true or false)
+createEigenvaluesPlot = 'true';
+switch createEigenvaluesPlot
+    case 'true'
+        % exportAsPDF (true or false)
+        fig = plotEigenvalues(TemperatureArray, 'true', ...
+            stlFileNameShortened, fileDate);
+    case 'false'
+    otherwise
+        disp('Error: createEigenvaluesPlot')
+end
+\end{lstlisting}
+
+\subsection{Excel-Datei als Latex Tabelle exportieren}
+
+\begin{lstlisting}
+% Export excel-file as Latex table
+createLatexTable = 'false';
+switch createLatexTable
+    case 'true'
+        exportAsLatexTable(fileName)
+    case 'false'
+    otherwise
+        disp('Error: createLatexTable')
+end
+\end{lstlisting}
 
 \section{Laser model}\label{sec:laserModel}
 
@@ -189,7 +294,7 @@ function parameter = getLaserParameter()
     parameter.waveLength = 10.63;
     % Laser power [W]
     parameter.laserPower = 30.0;
-    % Raw beam radius at focusing lens [mm] 
+    % Raw beam radius at focusing lens [mm]
     parameter.rawBeamRadius = 16.0;
     % Distance to focal point [mm]
     parameter.distanceFocalPoint  = 10.0;
@@ -198,9 +303,13 @@ function parameter = getLaserParameter()
 end
 \end{lstlisting}
 
+\section{Latex}\label{sec:latex}
+
 \section{Material model}\label{sec:materialModel}
 
 In diesem Ordner sind alle Funktionen zur Beschreibung der Eigenschaften des Werkstoffes abgelegt. Dies beinhaltet die spezifische Wärmekapazität $ c_{p} $, Wärmeleitfähigkeit $ \kappa $, Dichte $ \rho $ und Temperaturleitfähigkeit $ a $.
+
+\section{Plots}\label{sec:plots}
 
 \section{Reports}\label{sec:reports}
 
@@ -221,7 +330,7 @@ In dieser Funktionen können die Parameter zur Beschreibung des thermischen Eing
 \begin{lstlisting}
 function parameter = getThermalParameter()
     % Number of nodes
-    parameter.numberOfNodes = 50;
+    parameter.numberOfNodes = 25;
     % Chamber temperature [K]
     parameter.chamberTemperature = 273.15 + 175.0;
     % Powderbed temperature [K]
@@ -246,7 +355,8 @@ end
 Die Transparenz kann über den Befehl \textit{alpha(h,0.2)} angepasst werden, wobei der Wert nach dem \textit{h} die Transparenz bestimmt.
 
 \begin{lstlisting}
-function [fig] = plotSimulation(fin,x,y,z,xSliced,ySliced, ...)
+function [fig] = plotSimulation(fin, x, y, z, xSliced,  ...)
+    
     fig = figure(1);
     fin(fin == 0) = NaN;
     h = slice(x,y,z,fin-273.15,xSliced,ySliced,Inf);
@@ -259,73 +369,20 @@ function [fig] = plotSimulation(fin,x,y,z,xSliced,ySliced, ...)
     ylabel('y')
     zlabel('z')
     cb = colorbar;
-    ylabel(cb, '°C')
+    ylabel(cb, '{}^{\circ}C', 'Interpreter','tex')
     alpha(h,0.2);
+    set(gca,'fontsize',12)
+    
     stlName = stlName(1:end-4);
     fileName = [stlName, '-Layer', num2str(i)];
     orient(fig,'landscape')
     print(fig,'-bestfit',fileName,'-dpdf','-r0')
-\end{lstlisting}
-
-\section{main.m}\label{sec:main}
-
-Main-Funktion zur Ausführung der Simulation. Im Folgenden wird nur die Drehung des Voxel-Modells entlang der $ z $-Achse erklärt.
-
-Über die Zuweisung eines Wertes zur Variablen \textit{rotateZAxis} kann das Voxel-Modell entlang seiner $ z $-Achse um $ 90 $, $ 180 $ und $ 270 $ Grad gedreht werden.
-
-\begin{lstlisting}
-% Rotate Voxel- Matrix along z axis
-rotateZAxis = '0';
-
-switch rotateZAxis
-    case '0'
-        voxelMatrix = rot90(voxelMatrix,0);
-    case '90'
-        voxelMatrix = rot90(voxelMatrix,1);
-    case '180'
-        voxelMatrix = rot90(voxelMatrix,3);
-    case '270'
-        voxelMatrix = rot90(voxelMatrix,2);
-    otherwise 
-        disp('')
-end
-
-% Show Voxel plot (show or hide)
-displaySTLPlot = 'hide';
-
-switch displaySTLPlot
-    case 'show'
-        disp('')
-        fig = figure();
-        [vol_handle] = VoxelPlotter(voxelMatrix,1);
-        alpha(0.8)
-        az = -37;
-        el = 30;
-        view(az, el);
-        set(gca,'xlim',[0 nx+1], 'ylim',[0 ny+1], 'zlim',[0 nz+1])
-        xlabel('Nodes in x')
-        ylabel('Nodes in y')
-        zlabel('Nodes in z')
-        
-        exportSTLPlot = 'false';
-        
-        switch exportSTLPlot
-            case 'true'
-                orient(fig,'landscape')
-                print(fig,'-bestfit','displaySTLPlot','-dpdf','-r0')
-            case 'false'
-                disp('')
-        end
-    case 'hide'
-        disp('')
-    otherwise
-        disp('')     
 end
 \end{lstlisting}
 
 \section{Ablauf Simulation}
 
-\begin{figure}
+\begin{figure}[H]
 \centering
 \def\svgwidth{350pt}
 \input{Programmablaufplan.pdf_tex}

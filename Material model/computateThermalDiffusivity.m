@@ -1,7 +1,7 @@
 function [a] = computateThermalDiffusivity(theta)
     % [a] = computateThermalDiffusivity(theta)
     %
-    % Bachelor thesis equation number: ()
+    % Bachelor thesis equation number: (2.6)
     % 
     % Calculation of the thermal diffusivity for PA 2200. 
     % The input temperature must be specified in degrees Celsius.
@@ -9,3 +9,4 @@ function [a] = computateThermalDiffusivity(theta)
     %
     
     a = computateHeatConductivity(theta) ./ (computateDensity(theta) .* computateHeatCapacity(theta)); 
+end

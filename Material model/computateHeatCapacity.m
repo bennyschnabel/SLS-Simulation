@@ -1,7 +1,7 @@
 function [cp] = computateHeatCapacity(theta)
     % [cp] = computateHeatCapacity(theta)
     %
-    % Bachelor thesis equation number: ()
+    % Bachelor thesis equation number: (2.4)
     % 
     % Calculation of the heat capacity for PA 2200. 
     % The input temperature must be specified in degrees Celsius.
@@ -10,3 +10,4 @@ function [cp] = computateHeatCapacity(theta)
     
     cp = 2.650 + (109 ./ (4 * (theta - 184.3).^2 + 5.97));
     cp = cp * 10^3;
+end

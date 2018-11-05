@@ -5,13 +5,11 @@
 
 function parameter = getThermalParameter()
     % Number of nodes
-    parameter.numberOfNodes = 5;
+    parameter.numberOfNodes = 25;
     % Chamber temperature [K]
     parameter.chamberTemperature = 273.15 + 175.0;
-    % Powderbed temperature [K]
+    % Powderbed temperature [K] (273.15 + 140.0)
     parameter.powderbedTemperature = 273.15 + 163.0;
-    % [Temperature based on paper!!!]
-    %parameter.powderbedTemperature = 273.15 + 140.0;
     
     % Boltzmann constant [J/K]
     parameter.boltzmannConstant = 1.3806504 * 10^-23;

@@ -1,34 +1,53 @@
 function [R,T,A] = computateReflectionTransmissionAbsorption(s)
     % [R,T,A] = computateReflectionTransmissionAbsorption(s)
     %
-    % Bachelor thesis equation number: ()
+    % Bachelor thesis figure number: 2.15
     % 
-    % Calculation of the heat capacity for PA 2200. 
-    % The input temperature must be specified in degrees Celsius.
-    % The heat capacity has the unit J / (kg * K).
+    % Reflectance, transmittance and absorptivity for Polyamide 12
+    % The input layer thickness must be specified in millimeter.
     %
     
-    if s == 2 * 10^-4
+    if s == 0.2
         R = 0.06;
         T = 0.009;
         A = 0.931;
-    elseif s == 3 * 10^-4
+    elseif s == 0.3
         R = 0.04;
         T = 0.007;
         A = 0.953;
-    elseif s == 4 * 10^-4
-        R = 0.05;
-        T = 0.006;
-        A = 0.44;
-    elseif s == 1 * 10^-3
+    elseif s == 0.4
         R = 0.05;
         T = 0.006;
         A = 0.944;
-    elseif s == 1.5 * 10^-3
+    elseif s == 0.5
+        R = 0.04;
+        T = 0.006;
+        A = 0.954;
+    elseif s == 0.6
         R = 0.05;
         T = 0.006;
         A = 0.944;
-    elseif s == 2 * 10^-3
+    elseif s == 0.7
+        R = 0.05;
+        T = 0.006;
+        A = 0.944;
+    elseif s == 0.8
+        R = 0.04;
+        T = 0.006;
+        A = 0.954;
+    elseif s == 0.9
+        R = 0.05;
+        T = 0.006;
+        A = 0.944;
+    elseif s == 1.0
+        R = 0.05;
+        T = 0.006;
+        A = 0.944;
+    elseif s == 1.5
+        R = 0.05;
+        T = 0.006;
+        A = 0.944;
+    elseif s == 2.0
         R = 0.05;
         T = 0.006;
         A = 0.944;
@@ -38,3 +57,4 @@ function [R,T,A] = computateReflectionTransmissionAbsorption(s)
         A = NaN;
         disp('R, T, A not set due to not defined layer thickness');
     end
+end

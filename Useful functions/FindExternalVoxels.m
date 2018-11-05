@@ -1,5 +1,5 @@
-function [FV]=FindExternalVoxels(VoxelMat,Vox_Size)
-% FindExternalVoxels scans VoxeLMat (a 3D matrix) and finds which voxels
+function [FV]=findExternalVoxels(VoxelMat,Vox_Size)
+% findExternalVoxels scans VoxeLMat (a 3D matrix) and finds which voxels
 % are external by checking if they have nieghbors from all 6 sides
 % (TOP,BOTTOM,FRONT,BACK,LEFT,RIGHT). After finding if the voxel is
 % external it finds which faces are external by calling FindExternalFaces
@@ -115,4 +115,3 @@ else
 end
 VertexIndex=VertexIndex+8;
 end
-

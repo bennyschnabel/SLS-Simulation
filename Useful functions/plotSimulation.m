@@ -1,8 +1,12 @@
-function [fig] = plotSimulation(fin, x, y, z, xSliced, ySliced, zSliced, region, savePath, fileDate, i, stlName)
-    % [fig] = plotSimulation(fin, x, y, z, xSliced, ySliced, zSliced, region, savePath, fileDate, i)
+function [fig] = plotSimulation(fin, x, y, z, xSliced, ySliced, region, i, stlName)
+    % [fig] = plotSimulation(fin, x, y, z, xSliced, ySliced, region, i, stlName)
     % 
     % Plotting the simulation
     %
+    
+    set(groot, 'defaultAxesTickLabelInterpreter','tex');
+    set(groot, 'defaultLegendInterpreter','tex');
+    set(groot,'defaultTextInterpreter','tex');
     
     fig = figure(1);
     fin(fin == 0) = NaN;
@@ -16,10 +20,12 @@ function [fig] = plotSimulation(fin, x, y, z, xSliced, ySliced, zSliced, region,
     ylabel('y')
     zlabel('z')
     cb = colorbar;
-    ylabel(cb, '°C')
-    %alpha(h, 'color');
+    ylabel(cb, '{}^{\circ}C', 'Interpreter','tex')
     alpha(h,0.2);
+    set(gca,'fontsize',12)
+    
     stlName = stlName(1:end-4);
     fileName = [stlName, '-Layer', num2str(i)];
     orient(fig,'landscape')
     print(fig,'-bestfit',fileName,'-dpdf','-r0')
+end

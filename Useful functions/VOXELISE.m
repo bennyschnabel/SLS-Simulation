@@ -1,4 +1,4 @@
-function [gridOUTPUT,varargout] = VOXELISE(gridX,gridY,gridZ,varargin)
+function [gridOUTPUT,varargout] = voxelise(gridX,gridY,gridZ,varargin)
 % VOXELISE  Voxelise a 3D triangular-polygon mesh.
 %==========================================================================
 % AUTHOR        Adam H. Aitkenhead
@@ -155,7 +155,7 @@ if narginremaining==4
     meshXYZ = CONVERT_meshformat(varargin{1}.faces,varargin{1}.vertices);
   
   elseif ischar(varargin{1})
-    meshXYZ = READ_stl(varargin{1});
+    meshXYZ = readSTL(varargin{1});
     
   else
     meshXYZ = varargin{1};

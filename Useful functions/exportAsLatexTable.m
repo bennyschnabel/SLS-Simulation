@@ -6,11 +6,11 @@ function [] = exportAsLatexTable(fileName)
     
     fileType = '.xlsx';
     file = [fileName, fileType];
-    A = xlsread(file);
-    layerNo = A(:,1);
-    laserTime = A(:,2);
-    maxTemp = A(:,3);
-    minTemp = A(:,4);
+    excelEvaluationMatrix = xlsread(file);
+    layerNo = excelEvaluationMatrix(:,1);
+    laserTime = excelEvaluationMatrix(:,2);
+    maxTemp = excelEvaluationMatrix(:,3);
+    minTemp = excelEvaluationMatrix(:,4);
 
     fileName = [fileName, '.txt'];
     savePath = './Latex/';
@@ -27,5 +27,6 @@ function [] = exportAsLatexTable(fileName)
         fprintf(fileID, '%s%i} & %s%0.4f} %s & %s%0.4f} %s & %s%0.4f} %s %s \n', b, layerNo(i), b, laserTime(i), c, b, maxTemp(i), d, b, minTemp(i), d, e);
         i = i + 1;
     end
-    fprintf(fileID, '%s', fileName);
+    
     fclose(fileID);
+end

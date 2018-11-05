@@ -1,7 +1,7 @@
-function [coordVERTICES,varargout] = READ_stl(stlFILENAME,varargin)
+function [coordVERTICES,varargout] = readSTL(stlFILENAME,varargin)
 % READ_stlascii  Read mesh data in the form of an <*.stl> file
 %==========================================================================
-% FILENAME:          READ_stl.m
+% FILENAME:          readSTL.m
 % AUTHOR:            Adam H. Aitkenhead
 % INSTITUTION:       The Christie NHS Foundation Trust
 % CONTACT:           adam.aitkenhead@physics.cr.man.ac.uk

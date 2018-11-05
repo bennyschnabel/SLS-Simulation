@@ -14,3 +14,4 @@ function [sigma] = computateStefanBoltzmannConstant
     h = thermalParameter.planckConstant;
     
     sigma = 2/15 * ((pi^5 * k^4) / (c_0^2 * h^3));
+end

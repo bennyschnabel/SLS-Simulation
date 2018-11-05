@@ -1,155 +1,75 @@
-clear all; close all; clc;
+clc; clear all; close all;
 
 %% Add folders to search path
+
 addpath('Laser model');
+addpath('Latex');
+addpath('Manual');
 addpath('Material model');
+addpath('Plots');
 addpath('Reports');
 addpath('STL file');
 addpath('Thermal model');
 addpath('Useful functions');
-addpath('Latex');
+
+%% Start timer
 
 tic;
 
-%% Load all parameter
+%% Load all required parameters
 
-% Get all required thermal parameters
-thermalParameter = getThermalParameter();
 % Get all required laser parameters
 laserParameter = getLaserParameter();
+% Get all required thermal parameters
+thermalParameter = getThermalParameter();
 
 %% STL file import
 
-MyFolderInfo = dir('STL file');
-%dir **/*.STL
-d = dir('**/*.STL');
-fn = {d.name};
+% Selection window for STL-file
+stlFolder = dir('**/*.STL');
+allStlFiles = {stlFolder.name};
 [indx,tf] = listdlg('PromptString','Select a STL-file:',...
-                           'SelectionMode','single',...
-                           'ListString',fn, ...
-                           'Name','File Selection');
+    'SelectionMode','single',...
+    'ListString',allStlFiles, ...
+    'Name','File Selection');
+
+% Set selected STL-file
+stlFileName = strjoin(allStlFiles(indx));
+
+stlFileModel = stlread(stlFileName);
+[val,idx] = max([stlFileModel.vertices]);
+% Get the max length of the STL file [m]
+L = max(val) * 10^-3;
+
+% Display STL file name in console
+disp(stlFileName)
+disp('-------------------')
+
+%% Input window for parameters
 
 prompt = {'Enter number of Nodes [-]:','Enter Laser power [W]:','Enter Laser speed [m/s]:','Enter cooling time [s]:'};
 title = 'Input model parameter';
 dims = [1 50];
 definput = {num2str(thermalParameter.numberOfNodes),num2str(laserParameter.laserPower), ...
     num2str(laserParameter.laserSpeed),num2str(thermalParameter.coolingtime)};
-answer = inputdlg(prompt,title,dims,definput);
+userInputParameter = inputdlg(prompt,title,dims,definput);
 
-%stlName = [strjoin(answer(1)), '.STL'];
-stlName = strjoin(fn(indx));
-% Display STL file name in console
-disp(stlName)
-disp('-------------------')
-% Get the max length of the STL file
-stlModel  = stlread(stlName);
-[val,idx] = max([stlModel.vertices]);
-maxLengthOfSTLModel = max(val) * 10^-3;
+%% Create report files
 
-%% Create report and excel-file
-
+% Create txt file
 fileDate = datestr(now,'YYYY-mm-DD-HH-MM-SS');
-fileName = [fileDate, '-', stlName(1:end-4), '-Report', '.txt'];
+txtFileName = [fileDate, '-', stlFileName(1:end-4), '-Report', '.txt'];
 savePath = './Reports/';
-fileID = fopen([savePath fileName],'wt');
+txtFileID = fopen([savePath txtFileName],'wt');
 
-% Write data to report
-fprintf(fileID, 'STL file name: %s\n', stlName);
-fprintf(fileID, '-----------------------\n');
+% Write data to txt-file
+fprintf(txtFileID, 'STL file name: %s\n', stlFileName);
+fprintf(txtFileID, '-----------------------\n');
 
-% Write data to excel-file
-excelFileName = [fileDate, '-', stlName(1:end-4), '.xlsx'];
+% Create excel-file
+excelFileName = [fileDate, '-', stlFileName(1:end-4), '.xlsx'];
 excelHeader = {'Layer no', 'Laser exposure time', 'Maximum temperature', 'Minimum temperature'};
 xlswrite(excelFileName, excelHeader, 'Tabelle1')
-
-%% Thermal model
-
-Lx = maxLengthOfSTLModel;
-Ly = maxLengthOfSTLModel;
-Lz = maxLengthOfSTLModel;
-
-nx = str2double(cell2mat(answer(1)));
-ny = nx;
-nz = ny;
-dx = Lx/(nx-1);
-dy = Ly/(ny-1);
-dz = Lz/(nz-1);
-
-% [m]
-nodesThickness = maxLengthOfSTLModel / nx;
-
-T_powderbed = thermalParameter.powderbedTemperature;
-T_chamber = thermalParameter.chamberTemperature;
-
-%t_cooling = thermalParameter.coolingtime;
-t_cooling = str2double(cell2mat(answer(4)));
-
-% Write data to report
-fprintf(fileID, 'Number of nodes (layers): %d\n', nx);
-fprintf(fileID, 'Nodes thickness: %0.3f mm\n', nodesThickness*10^3);
-fprintf(fileID, 'Powderbed temperature: %.2f °C\n', T_powderbed-273.15);
-fprintf(fileID, 'Chamber temperature: %.2f °C\n', T_chamber-273.15);
-fprintf(fileID, 'Cooling time per layer: %0.3f s\n', t_cooling);
-
-%% STL model
-
-% Create Voxel- Matrix
-[voxelMatrix] = VOXELISE(nx,ny,nz,stlName,'xyz');
-
-% Add zeros to not touch the wall
-
-voxelMatrix(nx+1:nx+2,:,:) = 0;
-voxelMatrix(:,nx+1:nx+2,:) = 0;
-voxelMatrix(:,:,nx+1:nx+2) = 0;
-voxelMatrix = circshift(voxelMatrix,[1 1 1]);
-
-% Rotate Voxel- Matrix along z axis
-rotateZAxis = '0';
-
-switch rotateZAxis
-    case '0'
-        voxelMatrix = rot90(voxelMatrix,0);
-    case '90'
-        voxelMatrix = rot90(voxelMatrix,1);
-    case '180'
-        voxelMatrix = rot90(voxelMatrix,3);
-    case '270'
-        voxelMatrix = rot90(voxelMatrix,2);
-    otherwise 
-        disp('')
-end
-
-% Show Voxel plot (show or hide)
-displaySTLPlot = 'hide';
-
-switch displaySTLPlot
-    case 'show'
-        disp('')
-        fig = figure();
-        [vol_handle] = VoxelPlotter(voxelMatrix,1);
-        alpha(0.8)
-        az = -37;
-        el = 30;
-        view(az, el);
-        set(gca,'xlim',[0 nx+1], 'ylim',[0 ny+1], 'zlim',[0 nz+1])
-        xlabel('Nodes in x')
-        ylabel('Nodes in y')
-        zlabel('Nodes in z')
-        
-        exportSTLPlot = 'false';
-        
-        switch exportSTLPlot
-            case 'true'
-                orient(fig,'landscape')
-                print(fig,'-bestfit','displaySTLPlot','-dpdf','-r0')
-            case 'false'
-                disp('')
-        end
-    case 'hide'
-        disp('')
-    otherwise
-        disp('')     
-end
 
 %% Laser model
 
@@ -163,230 +83,320 @@ f = laserParameter.focalLength * 10^-3;
 b = laserParameter.distanceFocalPoint * 10^-3;
 % Laser power [W]
 %P = laserParameter.laserPower;
-P = str2double(cell2mat(answer(2)));
+P = str2double(cell2mat(userInputParameter(2)));
 % Laser speed [m/s]
 %v = laserParameter.laserSpeed;
-v = str2double(cell2mat(answer(3)));
+v = str2double(cell2mat(userInputParameter(3)));
 
-% Write data to report
-fprintf(fileID, 'Wave length: %.4f mm\n', lambda * 10^3);
-fprintf(fileID, 'Raw beam radius at focusing lens: %.2f mm\n', r_0 * 10^3);
-fprintf(fileID, 'Focal length: %.2f mm\n', f * 10^3);
-fprintf(fileID, 'Distance to focal point: %.2f mm\n', b * 10^3);
-fprintf(fileID, 'Laser power: %.2f W\n', P);
-fprintf(fileID, 'Laser speed: %.2f m/s\n', v);
+r = sqrt(0.^2 + 0.^2);
 
-axisscale = 0.02;
-
-x = -axisscale : 0.001 : axisscale;
-y = -axisscale : 0.001 : axisscale;
-
-[X,Y] = meshgrid(x,y);
-
-r = sqrt(X.^2 + Y.^2);
-
-% Calculation of the beam divergence angle [-]
+% Beam divergence angle [-]
 theta = computateBeamDivergenceAngle(lambda, r_0);
-% Calculation of the focal point radius [m]
+% Focal point radius [m]
 r_f = computateFocalPointRadius(f, theta);
-% Calculation of the workpiece radius [m]
-r_w = computateWorkpieceRadius(f, r_0, r_f, b);
-% Calculation of the heat flux intensity at the lense [W/m^2]
+% Heat flux intensity at the lense [W/m^2]
 q_0 = computateHeatFluxIntensityLense(P, r_0, r);
-% Calculation of the heat flux intensity at the focal point [W/m^2]
+% Heat flux intensity at the focal point [W/m^2]
 q_f = computateHeatFluxIntensityFocalPoint(P, r_0, lambda, f, r);
-% Calculation of the heat flux intensity at the workpiece [W/m^2]
+% Workpiece radius [m]
+r_w = computateWorkpieceRadius(f, r_0, r_f, b);
+% Heat flux intensity at the workpiece [W/m^2]
 q_w = computateHeatFluxIntensityWorkpiece(r_0, r_w, q_0);
-% Calculation of the maximal heat flux intensity at the workpiece [W/m^2]
-q_w_max = max(max(q_w));
 
-%plotLaserFunctions(X, Y, q_w * 10^-6, axisscale, 'Waermestromdichte', 'fig');
+% Display the heat flux intensity in a figure (true or false)
+displayHeatFluxIntensityFigure = 'false';
+switch displayHeatFluxIntensityFigure
+    case 'true'
+        % [fig] = plotHeatFluxIntensity(axisScale, exportAsPDF, P, r_0, r_w)
+        % exportAsPDF (true or false)
+        plotHeatFluxIntensity(0.02, 'false', P, r_0, r_w);
+    case 'false'
+    otherwise
+        disp('Error: displayHeatFluxIntensityFigure')
+end
 
-% Write data to report
-fprintf(fileID, 'Heat flux intensity at the workpiece: %.2f MW/m^2\n', q_w_max * 10^-6);
+% Write data to txt-file
+fprintf(txtFileID, 'Wave length: %.4f mm\n', lambda * 10^3);
+fprintf(txtFileID, 'Raw beam radius at focusing lens: %.2f mm\n', r_0 * 10^3);
+fprintf(txtFileID, 'Focal length: %.2f mm\n', f * 10^3);
+fprintf(txtFileID, 'Distance to focal point: %.2f mm\n', b * 10^3);
+fprintf(txtFileID, 'Laser power: %.2f W\n', P);
+fprintf(txtFileID, 'Laser speed: %.2f m/s\n', v);
+fprintf(txtFileID, 'Heat flux intensity at the workpiece: %.2f MW/m^2\n', q_w * 10^-6);
+
+%% Thermal model
+
+% Number of nodes [-]
+%n = thermalParameter.numberOfNodes;
+n = str2double(cell2mat(userInputParameter(1)));
+% Layer thickness [m]
+s = computateLayerThickness(L, n);
+% Powderbed temperature [K]
+T_powderbed = thermalParameter.powderbedTemperature;
+% Chamber temperature [K]
+T_chamber = thermalParameter.chamberTemperature;
+
+% Cooling time [s]
+%t_cooling = thermalParameter.coolingtime;
+t_cooling = str2double(cell2mat(userInputParameter(4)));
+
+% Write data to txt-file
+fprintf(txtFileID, 'Number of nodes (layers): %d\n', n);
+fprintf(txtFileID, 'Nodes thickness: %0.3f mm\n', s*10^3);
+fprintf(txtFileID, 'Powderbed temperature: %.2f °C\n', T_powderbed-273.15);
+fprintf(txtFileID, 'Chamber temperature: %.2f °C\n', T_chamber-273.15);
+fprintf(txtFileID, 'Cooling time per layer: %0.3f s\n', t_cooling);
 
 %% Material model
 
-%theta = 0 : 0.01 : 250;
-%plotMaterialParameter(theta, computateHeatCapacity(theta) * 10^-3, '$\left[ \frac{kJ}{kg \cdot K} \right]$' ,'Heat capacity');
-%plotMaterialParameter(theta, computateHeatConductivity(theta), '$\left[ \frac{W}{m \cdot K} \right]$' ,'Heat conductivity');
-%plotMaterialParameter(theta, computateThermalDiffusivity(theta), '$\left[ \frac{m^{2}}{s} \right]$' ,'Thermal diffusivity');
+[R,T,A] = computateReflectionTransmissionAbsorption(s * 10^3);
 
-[R,T,A] = computateReflectionTransmissionAbsorption(nodesThickness);
+% Write data to txt-file
+fprintf(txtFileID, 'Reflection: %.2f, transmission: %0.2f, absorption: %0.2f\n', R, T, A);
 
-% Write data to report
-fprintf(fileID, 'Reflection: %.2f, transmission: %0.2f, absorption: %0.2f\n', R, T, A);
+%% Conversion of the STL file into the voxel model
+
+% Create voxel model
+voxelModel = voxelise(n,n,n,stlFileName,'xyz');
+
+% Number of grid point to increase the distance to the edge
+voxelModel(n+1:n+2,:,:) = 0;
+voxelModel(:,n+1:n+2,:) = 0;
+voxelModel(:,:,n+1:n+2) = 0;
+voxelModel = circshift(voxelModel,[1 1 1]);
+
+% Rotate Voxel- Matrix along z axis
+rotateZAxis = '0';
+
+switch rotateZAxis
+    case '0'
+        voxelModel = rot90(voxelModel,0);
+    case '90'
+        voxelModel = rot90(voxelModel,1);
+    case '180'
+        voxelModel = rot90(voxelModel,3);
+    case '270'
+        voxelModel = rot90(voxelModel,2);
+    otherwise 
+        disp('Error: rotateZAxis')
+end
+
+% Display the voxel model in a figure (true or false)
+displayVoxelModelFigure = 'false';
+switch displayVoxelModelFigure
+    case 'true'
+        % [fig] = plotVoxelModel(voxelModel, n, exportAsPDF)
+        % exportAsPDF (true or false)
+        plotVoxelModel(voxelModel, n, 'false');
+    case 'false'
+    otherwise
+        disp('Error: displayVoxelModelFigure')
+end
 
 %% Plot export settings
 
-[szX,szY,szZ] = size(voxelMatrix);
+% Set new value for number of nodes depending on the distance to edge
+n_new = max(size(voxelModel));
 
 % Build meshgrid for plot
-[x,y,z] = meshgrid(0:Lx/(szX-1):Lx,0:Lx/(szY-1):Ly,0:Lx/(szZ-1):Lz);
-region = [0,Lx,0,Ly,0,Lz];
+[x,y,z] = meshgrid(0:L/(n_new-1):L,0:L/(n_new-1):L,0:L/(n_new-1):L);
+region = [0,L,0,L,0,L];
+xSliced = linspace(0, L, n);
+ySliced = linspace(0, L, n);
+zSliced = linspace(0, L, n);
 
-numberOfSlices = nx;
-xSliced = linspace(0, Lx, numberOfSlices);
-ySliced = linspace(0, Ly, numberOfSlices);
-zSliced = linspace(0, Lz, numberOfSlices);
-
-%% Evaluation per layer
-
-evaluationMatrix = zeros(nx, 2 * nx);
-
-%% Heat simulation
+%%%%%%%%%%%%%%%%%%%%%
+%% Heat simulation %%
+%%%%%%%%%%%%%%%%%%%%%
 
 %% Build initial condition
 
-u0 = zeros(szX,szY,szZ);
-for i = 1 : szX
-    for j = 1 : szY
-        for k = 1 : szZ
-            u0(i,j,k) = T_powderbed;
+T0 = zeros(n_new,n_new,n_new);
+for i = 1 : n_new
+    for j = 1 : n_new
+        for k = 1 : n_new
+            T0(i,j,k) = T_powderbed;
         end
     end
 end
 
 %% Initial heating of first layer
 
-LayerShift = circshift(voxelMatrix,[0 0 -2]);
-activeLayer = LayerShift(:,:,szZ);
+LayerShift = circshift(voxelModel,[0 0 -2]);
+activeLayer = LayerShift(:,:,n_new);
 
 % Laser time per layer
-t_Laser = nodesThickness * sum(activeLayer(:)) / v;
+t_Laser = s * sum(activeLayer(:)) / v;
 t_Laser_mean = t_Laser;
 
-% Display layer and time information
 i = 1;
-layerNumber = ['Layer: ', num2str(i), '; laser exposure time: ', num2str(t_Laser), ' s'];
-disp(layerNumber)
 
-[Temp, maxT, minT] = computateHeatEquation3D(t_Laser, q_w_max, u0, T_chamber, T_powderbed, ...
-    activeLayer, LayerShift, nodesThickness, Lx, Ly, Lz, szX, szY, szZ);
+[Temp, maxT, minT] = computateHeatEquation3D(t_Laser, q_w, T0, T_chamber, T_powderbed, ...
+    activeLayer, LayerShift, s, L, n_new, A);
+
+% Export plot of layer
+fin = LayerShift .* Temp;
+[plot] = plotSimulation(fin, x, y, z, xSliced, ySliced, region, i, stlFileName);
+
+% Collect temperature arrays
+TemperatureArray{i} = fin;
 
 % Display layer and temperature information
+layerNumber = ['Layer: ', num2str(i), '; laser exposure time: ', num2str(t_Laser), ' s'];
+disp(layerNumber)
 layerNumberMaxTemperature = ['Layer: ', num2str(i), '; maximum temperature: ', num2str(maxT-273.15), ' °C'];
 disp(layerNumberMaxTemperature)
 layerNumberMinTemperature = ['Layer: ', num2str(i), '; minimum temperature: ', num2str(minT-273.15), ' °C'];
 disp(layerNumberMinTemperature)
 disp('-------------------')
 
-% Write data to report
-fprintf(fileID, '---------------------------\n');
-fprintf(fileID, 'Layer no: %d\n', i);
-fprintf(fileID, 'Laser exposure time: %0.3f s\n', t_Laser);
-fprintf(fileID, 'Maximum temperature: %0.3f °C\n', maxT-273.15);
-fprintf(fileID, 'Minimum temperature: %0.3f °C\n', minT-273.15);
+% Write data to txt-file
+fprintf(txtFileID, '---------------------------\n');
+fprintf(txtFileID, 'Layer no: %d\n', i);
+fprintf(txtFileID, 'Laser exposure time: %0.3f s\n', t_Laser);
+fprintf(txtFileID, 'Maximum temperature: %0.3f °C\n', maxT-273.15);
+fprintf(txtFileID, 'Minimum temperature: %0.3f °C\n', minT-273.15);
 
-% Write data to excel-file
+% Write data to excel-file-array
 excelData = {num2str(i), t_Laser, maxT-273.15, minT-273.15};
 
-% Export plot of layer
-
-fin = LayerShift .* Temp;
-[plot] = plotSimulation(fin, x, y, z, xSliced, ySliced, zSliced, region, savePath, fileDate, i, stlName);
-
-% Temp-Matrix for video
-videoTemp{i} = [fin];
 
 %% Loop to simulate the rest of the layers
 
-while i < nx
+while i < n
     i = i + 1;
     
     % Cooling while moving down
     [Temp, ~, ~] = computateHeatEquation3D(t_cooling, 0, Temp, T_chamber, T_powderbed, ...
-        activeLayer, LayerShift, nodesThickness, Lx, Ly, Lz, szX, szY, szZ);
-
+        activeLayer, LayerShift, s, L, n_new, A);
+    
     % Moving down
     LayerShift = circshift(LayerShift,[0 0 -1]);
-    activeLayer = LayerShift(:,:,szZ);
+    activeLayer = LayerShift(:,:,n_new);
     
     % Laser time per layer
-    t_Laser = nodesThickness * sum(activeLayer(:)) / v;
+    t_Laser = s * sum(activeLayer(:)) / v;
     t_Laser_mean = t_Laser_mean + t_Laser;
     
-    % Display layer and time information
-    layerNumber = ['Layer: ', num2str(i), '; laser exposure time: ', num2str(t_Laser), ' s'];
-    disp(layerNumber)
-
     % Heating
-    [Temp, maxT, minT] = computateHeatEquation3D(t_Laser, q_w_max, Temp, T_chamber, T_powderbed, ...
-        activeLayer, LayerShift, nodesThickness, Lx, Ly, Lz, szX, szY, szZ);
+    [Temp, maxT, minT] = computateHeatEquation3D(t_Laser, q_w, Temp, T_chamber, T_powderbed, ...
+        activeLayer, LayerShift, s, L, n_new, A);
+    
+    fin = LayerShift .* Temp;
+    [plot] = plotSimulation(fin, x, y, z, xSliced, ySliced, region, i, stlFileName);
+    
+    % Collect temperature arrays
+    TemperatureArray{i} = fin;
     
     % Display layer and temperature information
+    layerNumber = ['Layer: ', num2str(i), '; laser exposure time: ', num2str(t_Laser), ' s'];
+    disp(layerNumber)
     layerNumberMaxTemperature = ['Layer: ', num2str(i), '; maximum temperature : ', num2str(maxT-273.15), ' °C'];
     disp(layerNumberMaxTemperature)
     layerNumberMinTemperature = ['Layer: ', num2str(i), '; minimum temperature: ', num2str(minT-273.15), ' °C'];
     disp(layerNumberMinTemperature)
     disp('-------------------')
     
-    % Write data to report
-    fprintf(fileID, '---------------------------\n');
-    fprintf(fileID, 'Layer no: %d\n', i);
-    fprintf(fileID, 'Laser exposure time: %0.3f s\n', t_Laser);
-    fprintf(fileID, 'Maximum temperature: %0.3f °C\n', maxT-273.15);
-    fprintf(fileID, 'Minimum temperature: %0.3f °C\n', minT-273.15);
+    % Write data to txt-file
+    fprintf(txtFileID, '---------------------------\n');
+    fprintf(txtFileID, 'Layer no: %d\n', i);
+    fprintf(txtFileID, 'Laser exposure time: %0.3f s\n', t_Laser);
+    fprintf(txtFileID, 'Maximum temperature: %0.3f °C\n', maxT-273.15);
+    fprintf(txtFileID, 'Minimum temperature: %0.3f °C\n', minT-273.15);
     
-    % Write data to excel-file
+    % Write data to excel-file-array
     excelData(end+1,:) = {num2str(i), t_Laser, maxT-273.15, minT-273.15};
-    
-    % Export plot of layer
-    fin = LayerShift .* Temp;
-    [plot] = plotSimulation(fin, x, y, z, xSliced, ySliced, zSliced, region, savePath, fileDate, i, stlName);
-    
-    videoTemp{i} = [fin];
 end
 
-%% Combine PDFs into one
+%% Display final information
 
-stlName = stlName(1:end-4);
-pdfToCombine = cell(1,nx);
-
-for j = 1 : nx
-    fileName2 = [stlName, '-Layer', num2str(j)];
-    singlePDF = [fileName2, '.pdf'];
-    pdfToCombine{j} = singlePDF;
-end
-
-combinedPDF = [fileDate, '-', stlName, '-Plot', '.pdf'];
-append_pdfs(combinedPDF, pdfToCombine{:});
-
-for j = 1 : nx
-    delete(pdfToCombine{j})
-end
-
-%% Export completed simulation as plot
-
-%{
-fin = circshift(voxelMatrix,[0 0 -2]) .* Temp;
-[plot] = plotSimulation(fin, x, y, z, xSliced, ySliced, zSliced, region, savePath, fileDate, i, stlName);
-fileName = ['SimulationPlot-', fileDate, '.fig'];
-savefig(fileName)
-%}
-
-%% Export information
-nodesNumber = ['Number of nodes (layers): ', num2str(nx)];
-laserTime = ['Average laser time per layer: ', num2str(t_Laser_mean/nx), ' s'];
+nodesNumber = ['Number of nodes (layers): ', num2str(n)];
+laserTime = ['Average laser time per layer: ', num2str(t_Laser_mean/n), ' s'];
 averageTime = ['Average runtime: ', num2str(toc/60), ' min'];
 
 disp(nodesNumber)
 disp(laserTime)
 disp(averageTime)
 
-% Write data to report
-fprintf(fileID, '---------------------------\n');
-fprintf(fileID, 'Average laser time per layer: %0.3f s\n', t_Laser_mean/nx);
-fprintf(fileID, 'Average runtime: %0.3f min\n', toc/60);
+%% Combine PDFs into one file
 
-fclose(fileID);
+stlFileNameShortened = stlFileName(1:end-4);
+pdfToCombine = cell(1,n);
 
+for j = 1 : n
+    fileName2 = [stlFileNameShortened, '-Layer', num2str(j)];
+    singlePDF = [fileName2, '.pdf'];
+    pdfToCombine{j} = singlePDF;
+end
+
+combinedPDF = [fileDate, '-', stlFileNameShortened, '-Plot', '.pdf'];
+append_pdfs(combinedPDF, pdfToCombine{:});
+
+for j = 1 : n
+    delete(pdfToCombine{j})
+end
+
+%% Write data to txt- and excel-files and close them
+
+% Write data to txt-file
+fprintf(txtFileID, '---------------------------\n');
+fprintf(txtFileID, 'Average laser time per layer: %0.3f s\n', t_Laser_mean/n);
+fprintf(txtFileID, 'Average runtime: %0.3f min\n', toc/60);
+
+fclose(txtFileID);
+
+% Write data to excel-file
 xlswrite(excelFileName, excelData, 'Tabelle1', 'A2')
 
-fileName = [fileDate, '-', stlName];
-[fig] = plotEvaluationOfSimulation(fileName, stlName, fileDate);
-evaluationFileName = [fileDate, '-', stlName, '-Evaluation', '.pdf'];
+%% Evaluation of temperature
 
-movefile(evaluationFileName, 'Reports')
+fileName = [fileDate, '-', stlFileNameShortened];
+[fig] = plotEvaluationOfSimulation(fileName, stlFileNameShortened, fileDate);
+evaluationFileName = [fileDate, '-', stlFileNameShortened, '-Evaluation', '.pdf'];
+
+%% Plot for movie
+
+% Create a movie plot (true or false)
+createVideoPlot = 'false';
+switch createVideoPlot
+    case 'true'
+        plotSimulationForVideoExport(TemperatureArray, ...
+            n, n_new, x, y, z, xSliced, ySliced, region, ...
+            stlFileNameShortened, fileDate);
+    case 'false'
+    otherwise
+        disp('Error: createVideoPlot')
+end
+
+%% Plot eigenvalues of temperature matrix
+
+% Create a plot of the eigenvalues (true or false)
+createEigenvaluesPlot = 'true';
+switch createEigenvaluesPlot
+    case 'true'
+        % [fig] = plotEigenvalues(temperatureArray, exportAsPDF)
+        % exportAsPDF (true or false)
+        fig = plotEigenvalues(TemperatureArray, 'true', ...
+            stlFileNameShortened, fileDate);
+    case 'false'
+    otherwise
+        disp('Error: createEigenvaluesPlot')
+end
+
+%% Export Excel-file as Latex table
+
+% Export excel-file as Latex table (true or false)
+createLatexTable = 'false';
+switch createLatexTable
+    case 'true'
+        exportAsLatexTable(fileName)
+    case 'false'
+    otherwise
+        disp('Error: createLatexTable')
+end
+
+%% Move files to folder 'Reports'
+
 movefile(excelFileName, 'Reports')
 movefile(combinedPDF, 'Reports')
+movefile(evaluationFileName, 'Reports')

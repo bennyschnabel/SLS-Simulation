@@ -1,5 +1,5 @@
-function [T,maxT, minT] = computateHeatEquation3D(tFinal, q_w, u0, T_chamber, T_bed, layer, layerShift, layerThickness, Lx, Ly, Lz, nx, ny, nz)
-    % [T,maxT, minT] = computateHeatEquation3D(tFinal, q_w, u0, T_chamber, T_bed, layer, layerShift, layerThickness, Lx, Ly, Lz, nx, ny, nz)
+function [T,maxT, minT] = computateHeatEquation3D(tFinal, q_w, u0, T_chamber, T_bed, layer, layerShift, s, L, n, A)
+    % [T,maxT, minT] = computateHeatEquation3D(tFinal, q_w, u0, T_chamber, T_bed, layer, layerShift, s, L, n, A)
     %
     % Bachelor thesis equation number: ()
     % 
@@ -12,22 +12,21 @@ function [T,maxT, minT] = computateHeatEquation3D(tFinal, q_w, u0, T_chamber, T_
     %thermalParameter = getThermalParameter();
     
     a = computateThermalDiffusivity(184.3) * 10^3;
-    hx = Lx/(nx-1);
-    hy = Ly/(ny-1);
-    hz = Lz/(nz-1);
-    Dx = a/hx^2;
-    Dy = a/hy^2;
-    Dz = a/hz^2;
+    h = L/(n-1);
+    D = a/h^2;
     
     rho =  computateDensity(184.3);
     c_p = computateHeatCapacity(184.3);
     
-    % Build numerical mesh for plot
-    [szX,szY] = size(layer);
-    [x,y,z] = meshgrid(0:Lx/(szX-1):Lx,0:Lx/(szY-1):Ly,0:Lx/(szY-1):Lz);
-
+    sigma = computateStefanBoltzmannConstant;
+    if isnan(A)
+        A = 1;
+    else
+        A = A;
+    end
     % Set Initial time step
-    dt0 = 1/(2*a*(1/hx^2+1/hy^2+1/hz^2)); % stability condition
+    dt0 = 1/(2*a*(1/h^2+1/h^2+1/h^2)); % stability condition
+    %disp(dt0)
     
     if dt0 > 1 * 10^-3
         dt0 = 1 * 10^-5;
@@ -40,40 +39,30 @@ function [T,maxT, minT] = computateHeatEquation3D(tFinal, q_w, u0, T_chamber, T_
     % load initial conditions
     t=dt0; it=0; u=u0; dt=dt0;
 
-    q = zeros(szX,szY,szY);
-    q(:,:,szX-1) = layer;
-    q(:,:,szX-1) = q(:,:,szX-1) * (q_w/layerThickness);
+    q = zeros(n,n,n);
+    q(:,:,n-1) = layer;
+    q(:,:,n-1) = q(:,:,n-1) * (q_w/s);
     
     maxT = 0;
     minT = 1 * 10^5;
     
-    iter = tFinal / dt0;
-    iterA = iter / nx;
-    
-    % Set plot region
-    region = [0,Lx,0,Ly,0,Lz]; 
-
-    xSliced = linspace(0.1, Lx, 5);
-    ySliced = linspace(0.1, Ly, 5);
-    zSliced = linspace(0.1, Lz, 5);
-    
     while t < tFinal
         % RK stages
         uo=u;
-        u = finiteDifferenceMethod3D(uo,szX,szX,szX,Dx,Dy,Dz,dt,q,rho,c_p);
+        u = finiteDifferenceMethod3D(uo,n,D,dt,q,rho,c_p,sigma,A);
         T = u;
         
         % set BCs
         u(1,:,:) = T_bed;
         u(:,1,:) = T_bed;
         u(:,:,1) = T_bed;
-        u(szX,:,:) = T_bed ;
-        u(:,szX,:) = T_bed ;
+        u(n,:,:) = T_bed ;
+        u(:,n,:) = T_bed ;
         
         if q_w == 0
-            u(:,:,szX) = T_chamber;
+            u(:,:,n) = T_chamber;
         else
-            u(:,:,szX) = uo(:,:,szX-1);
+            u(:,:,n) = uo(:,:,n-1);
         end
          
          % compute time step
@@ -87,46 +76,16 @@ function [T,maxT, minT] = computateHeatEquation3D(tFinal, q_w, u0, T_chamber, T_
          heatedLayer = layerShift .* T;
          heatedLayer(heatedLayer == 0) = NaN;
          
-         if maxT < max(max(heatedLayer(:,:,szX)))
-             maxT = max(max(heatedLayer(:,:,szX)));
+         if maxT < max(max(heatedLayer(:,:,n)))
+             maxT = max(max(heatedLayer(:,:,n)));
          else
              maxT = maxT;
          end
-         
-         %{
-         if minT > min(min(heatedLayer(:,:,szX)))
-             minT = min(min(heatedLayer(:,:,szX)));
-         else
-             minT = minT;
-         end
-         %}
-         
-         % Real-time plot
-         displayLivePlot='hide';
-         
-         switch displayLivePlot
-             case 'show'
-                 disp('')
-                 if mod(it,100)
-                     fin = layerShift .* T;
-                     fin(fin == 0) = NaN;
-                     slice(x,y,z,fin-273.15,Lx/2,Ly/2,Lz/2);
-                     axis(region);
-                     titlePlot = ['Elapsed time: ' num2str(t) ' s']; 
-                     title(titlePlot); 
-                     cb = colorbar;
-                     ylabel(cb, '°C');
-                     drawnow;
-                 end
-             case 'hide'
-                 disp('')
-             otherwise
-                 disp('')
-         end
     end
     
-    if minT > min(min(heatedLayer(:,:,szX)))
-        minT = min(min(heatedLayer(:,:,szX)));
+    if minT > min(min(heatedLayer(:,:,n)))
+        minT = min(min(heatedLayer(:,:,n)));
     else
         minT = minT;
     end
+end
