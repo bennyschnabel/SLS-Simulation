@@ -1,4 +1,4 @@
-function [fig] = plotSimulationForVideoExport(temperatureArray, n, n_new, x, y, z, xSliced, ySliced, region, stlFileName, fileDate)
+function [fig] = plotSimulationForVideoExport(temperatureArray, n_new, x, y, z, xSliced, ySliced, region, stlFileName, fileDate)
     % [fig] = plotSimulationForVideoExport(temperatureArray, n, n_new, x, y, z, xSliced, ySliced, region, stlFileName, fileDate)
     % 
     % Plotting the simulation
@@ -8,13 +8,12 @@ function [fig] = plotSimulationForVideoExport(temperatureArray, n, n_new, x, y, 
     [o, p, q] = size(temperatureArray{1});
     nameMatrix = zeros(o,p,q);
     
-    videoFileName = [fileDate, '-', stlFileName, '.avi'];
+    videoFileName = [fileDate, '-', stlFileName];
     
-    v = VideoWriter(videoFileName);
+    v = VideoWriter(videoFileName, 'Uncompressed AVI');
     % Number of frames to display per second
-    v.FrameRate = 3;
+    v.FrameRate = 2;
     % A percentage from 0 through 100
-    v.Quality = 100;
     open(v)
     
     % Display information
@@ -32,13 +31,20 @@ function [fig] = plotSimulationForVideoExport(temperatureArray, n, n_new, x, y, 
     i = 1;
     j = 0;
     
+    stlName = stlFileName(1:end-4);
+    
     while i <= b
         Temp = temperatureArray{i};
         nameMatrix(:,:,b-j:b) = Temp(:,:,b+2-j:b+2);
-        [plot] = plotSimulation(nameMatrix, x, y, z, xSliced, ySliced, region, i, stlFileName);
+        plotSimulationPNG(nameMatrix, x, y, z, xSliced, ySliced, region, i, stlFileName);
         
-        frame = getframe(gcf);
-        writeVideo(v,frame);
+        fileName = [stlName, '-Layer', num2str(i), '.png'];
+        
+        img = imread(fileName);
+        
+        writeVideo(v,img)
+        
+        delete(fileName)
         
         videoInformation = ['Creating video frame ', num2str(i), ' of ', num2str(b)];
         disp(videoInformation)
@@ -51,21 +57,7 @@ function [fig] = plotSimulationForVideoExport(temperatureArray, n, n_new, x, y, 
     disp('End video function')
     disp('--------------------')
     
-    pdfToCombine = cell(1,b);
-    
-    for j = 1 : b
-        fileName2 = ['T', '-Layer', num2str(j)];
-        singlePDF = [fileName2, '.pdf'];
-        pdfToCombine{j} = singlePDF;
-    end
-    
-    combinedPDF = [fileDate, '-', stlFileName, '-Video', '.pdf'];
-    append_pdfs(combinedPDF, pdfToCombine{:});
-    
-    for j = 1 : n
-        delete(pdfToCombine{j})
-    end
+    videoFileName = [fileDate, '-', stlFileName, '.avi'];
     
     movefile(videoFileName, 'Reports')
-    movefile(combinedPDF, 'Reports')
 end

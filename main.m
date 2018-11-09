@@ -357,11 +357,11 @@ evaluationFileName = [fileDate, '-', stlFileNameShortened, '-Evaluation', '.pdf'
 %% Plot for movie
 
 % Create a movie plot (true or false)
-createVideoPlot = 'false';
+createVideoPlot = 'true';
 switch createVideoPlot
     case 'true'
         plotSimulationForVideoExport(TemperatureArray, ...
-            n, n_new, x, y, z, xSliced, ySliced, region, ...
+            n_new, x, y, z, xSliced, ySliced, region, ...
             stlFileNameShortened, fileDate);
     case 'false'
     otherwise
@@ -371,7 +371,7 @@ end
 %% Plot eigenvalues of temperature matrix
 
 % Create a plot of the eigenvalues (true or false)
-createEigenvaluesPlot = 'true';
+createEigenvaluesPlot = 'false';
 switch createEigenvaluesPlot
     case 'true'
         % [fig] = plotEigenvalues(temperatureArray, exportAsPDF)
